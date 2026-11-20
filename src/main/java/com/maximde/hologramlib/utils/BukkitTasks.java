@@ -4,6 +4,7 @@ import com.tcoded.folialib.FoliaLib;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import lombok.Setter;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -43,6 +44,14 @@ public final class BukkitTasks {
                 }
             }.runTask(plugin);
         }
+    }
+
+    public static void runTask(Runnable runnable, Entity entity) {
+        if (foliaLib.isFolia()) {
+            foliaLib.getScheduler().runAtEntity(entity, task -> runnable.run());
+            return;
+        }
+        runTask(runnable);
     }
 
     public static void runTaskAsync(Runnable runnable) {

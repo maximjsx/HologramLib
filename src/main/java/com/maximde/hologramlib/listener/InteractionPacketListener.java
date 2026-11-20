@@ -40,11 +40,11 @@ public class InteractionPacketListener implements PacketListener {
         if (interactionBox.isEmpty()) return;
 
         UUID playerUUID = event.getUser().getUUID();
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
 
         BukkitTasks.runTask(() -> {
-            Player player = Bukkit.getPlayer(playerUUID);
-
-            if (player != null && player.isOnline()) {
+            if (player.isOnline()) {
                 Location boxLocation = interactionBox.get().getLocation();
 
                 if (boxLocation == null || boxLocation.getWorld() == null) return;
@@ -62,6 +62,6 @@ public class InteractionPacketListener implements PacketListener {
 
                 interactionBox.get().triggerInteraction((player));
             }
-        });
+        }, player);
     }
 }
