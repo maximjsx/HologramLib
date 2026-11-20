@@ -21,7 +21,7 @@ import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import lombok.Getter;
 import me.tofaa.entitylib.APIConfig;
 import me.tofaa.entitylib.EntityLib;
-import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform;
+import com.maximde.hologramlib.utils.HologramEntityLibPlatform;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -161,7 +161,7 @@ public abstract class HologramLib {
     }
 
     private static void initializeEntityLib() {
-        SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(plugin);
+        HologramEntityLibPlatform platform = new HologramEntityLibPlatform(plugin);
         APIConfig config = new APIConfig(PacketEvents.getAPI())
                 .usePlatformLogger();
         EntityLib.init(platform, config);

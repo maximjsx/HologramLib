@@ -3,6 +3,7 @@ package com.maximde.hologramlib.listener;
 import com.github.retrooper.packetevents.event.PacketListener;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import com.maximde.hologramlib.hologram.HologramManager;
 import com.maximde.hologramlib.hologram.InteractionBox;
@@ -22,12 +23,18 @@ public class InteractionPacketListener implements PacketListener {
     private final HologramManager hologramManager;
     private final ConcurrentHashMap<UUID, Long> lastProcessedInteraction = new ConcurrentHashMap<>();
 
+    private static final String ATTACK = "ATTACK";
+
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-        WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity(event);
-        int entityId = packet.getEntityId();
+        int entityId;
+        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
+            entityId = new WrapperPlayClientInteractEntity(event).getEntityId();
+        } else if (ATTACK.equals(event.getPacketType().getName())) {
+            entityId = new WrapperPlayClientAttack(event).getEntityId();
+        } else {
+            return;
+        }
         Optional<InteractionBox> interactionBox = hologramManager.getInteractionBoxByEntityId(entityId);
 
         if (interactionBox.isEmpty()) return;

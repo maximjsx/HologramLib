@@ -28,8 +28,6 @@ import java.util.regex.Pattern;
  */
 public class BedrockPlayerHeadFilter implements PacketListener {
 
-    private static final int TEXT_DISPLAY_TEXT_INDEX = 23;
-
     private static final Pattern HEAD_TAG_PATTERN = Pattern.compile("<head:[^>]+>");
 
     public BedrockPlayerHeadFilter(PacketEventsAPI<?> packetEventsAPI) {
@@ -72,8 +70,7 @@ public class BedrockPlayerHeadFilter implements PacketListener {
         boolean textModified = false;
 
         for (EntityData<?> data : packet.getEntityMetadata()) {
-            if (data.getIndex() == TEXT_DISPLAY_TEXT_INDEX &&
-                    data.getType() == EntityDataTypes.ADV_COMPONENT) {
+            if (data.getType() == EntityDataTypes.ADV_COMPONENT) {
 
                 Component originalComponent = (Component) data.getValue();
                 String serialized = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().serialize(originalComponent);
@@ -83,7 +80,7 @@ public class BedrockPlayerHeadFilter implements PacketListener {
                 if (!serialized.equals(filteredText)) {
                     Component filteredComponent = MiniMessage.get(filteredText);
                     newMetadata.add(new EntityData<>(
-                            TEXT_DISPLAY_TEXT_INDEX,
+                            data.getIndex(),
                             EntityDataTypes.ADV_COMPONENT,
                             filteredComponent
                     ));

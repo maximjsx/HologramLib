@@ -23,8 +23,6 @@ import java.util.Optional;
 
 public class PlaceholderAPIHook implements PacketListener {
 
-    private static final int TEXT_DISPLAY_TEXT_INDEX = 23; // The index for the message in the Entity Metadata packet (It worked on my side, tbh i dont feel like this is safe, but it works for now)
-
     public PlaceholderAPIHook(PacketEventsAPI<?> packetEventsAPI) {
         packetEventsAPI.getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
     }
@@ -65,35 +63,21 @@ public class PlaceholderAPIHook implements PacketListener {
             return;
         }
 
+
+        List<EntityData<?>> metadata = packet.getEntityMetadata();
+        if (metadata.stream().noneMatch(data -> data.getType() == EntityDataTypes.ADV_COMPONENT)) {
+            return;
+        }
+
         String parsedText = PlaceholderAPI.setPlaceholders(player, rawText);
         Component finalComponent = MiniMessage.get(textHologram.replaceFontImages(parsedText));
 
-        List<EntityData<?>> newMetadata = new ArrayList<>();
-        boolean textMetaFound = false;
-
-        for (EntityData<?> data : packet.getEntityMetadata()) {
-            if (data.getIndex() == TEXT_DISPLAY_TEXT_INDEX &&
-                data.getType() == EntityDataTypes.ADV_COMPONENT) {
-
-                newMetadata.add(new EntityData<>(
-                    TEXT_DISPLAY_TEXT_INDEX,
-                    EntityDataTypes.ADV_COMPONENT,
-                    finalComponent
-                ));
-                textMetaFound = true;
-            } else {
-                newMetadata.add(data);
-            }
+        List<EntityData<?>> newMetadata = new ArrayList<>(metadata.size());
+        for (EntityData<?> data : metadata) {
+            newMetadata.add(data.getType() == EntityDataTypes.ADV_COMPONENT
+                    ? new EntityData<>(data.getIndex(), EntityDataTypes.ADV_COMPONENT, finalComponent)
+                    : data);
         }
-
-        if (!textMetaFound) {
-            newMetadata.add(new EntityData<>(
-                TEXT_DISPLAY_TEXT_INDEX,
-                EntityDataTypes.ADV_COMPONENT,
-                finalComponent
-            ));
-        }
-
         packet.setEntityMetadata(newMetadata);
     }
 }
