@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -332,11 +333,12 @@ public class HologramManager {
     }
 
     private TaskHandle animateHologram(TextHologram hologram, TextAnimation textAnimation) {
+        AtomicInteger frame = new AtomicInteger();
         return BukkitTasks.runTaskTimer(() -> {
-            if (textAnimation.getTextFrames().isEmpty()) return;
-            hologram.setMiniMessageText(textAnimation.getTextFrames().get(0));
-            hologram.update();
-            Collections.rotate(textAnimation.getTextFrames(), -1);
+            List<String> frames = textAnimation.getTextFrames();
+            if (frames.isEmpty()) return;
+            hologram.setMiniMessageText(frames.get(Math.floorMod(frame.getAndIncrement(), frames.size())));
+            hologram.updateText();
         }, textAnimation.getDelay(), textAnimation.getSpeed());
     }
 

@@ -218,6 +218,15 @@ public class TextHologram extends Hologram<TextHologram> {
         return this;
     }
 
+    /**
+     * Sends viewers only the current text instead of every property like {@link #update()} does
+     */
+    public TextHologram updateText() {
+        TextDisplayMeta meta = (TextDisplayMeta) super.entity.getEntityMeta();
+        sendChanges(() -> meta.setText(this.text));
+        return this;
+    }
+
     public TextHologram setRawText(String rawText) {
         this.rawText = rawText;
 
