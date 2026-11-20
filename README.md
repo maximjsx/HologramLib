@@ -22,7 +22,7 @@
    - [Leaderboards](https://github.com/maximjsx/HologramLib/wiki/5.-Leaderboards)  
    - [Animations](https://github.com/maximjsx/HologramLib/wiki/6.-Animations)  
 
-<a href="https://github.com/maximjsx/HologramLib/releases/download/1.8.3/HologramLib-1.8.3.jar">
+<a href="https://github.com/maximjsx/HologramLib/releases/latest">
   <img width="200px" src="https://github.com/HologramLib/Addons/blob/main/download_jar.svg" alt="Download"/>
 </a>
 
@@ -44,15 +44,15 @@ Entity attachment • Per-player visibility • View distance control
 **Compatibility**  
 | Software | Versions       | 
 |-----------------|--------------------------|
-| **Paper**       | 1.19.4 → 1.21.8 ✔️       |
-| **Purpur**      | 1.19.4 → 1.21.8 ✔️       | 
-| **Folia**       | 1.19.4 → 1.21.8 ✔️       | 
+| **Paper**       | 1.19.4 → 26.3 ✔️         |
+| **Purpur**      | 1.19.4 → 26.3 ✔️         | 
+| **Folia**       | 1.19.4 → 26.3 ✔️         | 
 | **Spigot**      | ❌ Not supported         | 
 | **Bedrock**     | ❌ Not supported         | 
 | **Legacy**      | ❌ (1.8 - 1.19.3)        | 
 
 **Dependencies**  
-- [PacketEvents](https://www.spigotmc.org/resources/80279/) (Required)
+- [PacketEvents](https://www.spigotmc.org/resources/80279/) 2.14.0 or newer (Required)
 
 If you want to learn how to use HologramLib in your plugin, check out the detailed guide here:  
 👉 [HologramLib Wiki](https://github.com/maximjsx/HologramLib/wiki)
@@ -74,7 +74,7 @@ dependencies {
 
 **Step 2: Basic Implementation**
 ```java
-HologramManager manager = HologramAPI.getManager().get();
+HologramManager manager = HologramLib.getManager().orElseThrow();
 
 TextHologram hologram = new TextHologram("unique_id")
     .setMiniMessageText("<aqua>Hello world!")
@@ -117,11 +117,11 @@ manager.spawn(hologram);
 - Interactive holograms
 - Improved animation system
 - Persistant holograms
-- - Particle-effect holograms
+- Particle-effect holograms
 
 
 > [!WARNING]
-> Persistant holograms & the addon system are still experimental features
+> Persistant holograms are still an experimental feature
 
 ## Contributors
 Contributions to this repo or the example plugin are welcome!
