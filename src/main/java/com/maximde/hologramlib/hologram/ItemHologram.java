@@ -19,7 +19,6 @@ import org.bukkit.Bukkit;
 import org.joml.Vector3f;
 
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -160,28 +159,16 @@ public class ItemHologram extends Hologram<ItemHologram> {
 
     @Override
     int getHeight() {
-        float baseSize = 0.5f;
-        switch (this.displayType) {
-            case GROUND -> baseSize = 0.25f;
-            case GUI -> baseSize = 0.5f;
-            case HEAD -> baseSize = 0.5f;
-            case FIXED -> baseSize = 0.5f;
-            default -> baseSize = 0.5f;
-        }
-        return Math.max(1, (int) Math.ceil(baseSize * this.scale.y));
+        return Math.max(1, (int) Math.ceil(baseSize() * this.scale.y));
     }
 
     @Override
     int getWidth() {
-        float baseSize = 0.5f;
-        switch (this.displayType) {
-            case GROUND -> baseSize = 0.25f;
-            case GUI -> baseSize = 0.5f;
-            case HEAD -> baseSize = 0.5f;
-            case FIXED -> baseSize = 0.5f;
-            default -> baseSize = 0.5f;
-        }
-        return Math.max(1, (int) Math.ceil(baseSize * Math.max(this.scale.x, this.scale.z)));
+        return Math.max(1, (int) Math.ceil(baseSize() * Math.max(this.scale.x, this.scale.z)));
+    }
+
+    private float baseSize() {
+        return this.displayType == ItemDisplayMeta.DisplayType.GROUND ? 0.25f : 0.5f;
     }
 
     /**
@@ -228,7 +215,7 @@ public class ItemHologram extends Hologram<ItemHologram> {
         copy.teleportDuration = this.teleportDuration;
         copy.interpolationDurationTransformation = this.interpolationDurationTransformation;
         copy.viewRange = this.viewRange;
-        copy.updateTaskPeriod = this.updateTaskPeriod;
+        copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
         return copy;
     }

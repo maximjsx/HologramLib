@@ -332,7 +332,7 @@ public class HologramManager {
     }
 
     private TaskHandle animateHologram(TextHologram hologram, TextAnimation textAnimation) {
-        return BukkitTasks.runTaskTimerAsync(() -> {
+        return BukkitTasks.runTaskTimer(() -> {
             if (textAnimation.getTextFrames().isEmpty()) return;
             hologram.setMiniMessageText(textAnimation.getTextFrames().get(0));
             hologram.update();
@@ -371,7 +371,6 @@ public class HologramManager {
 
     /**
      * Spawns a SwitchableLeaderboard at the specified location
-     * This method should be added to HologramManager
      *
      * @param switchableLeaderboard The switchable leaderboard to spawn
      * @param location The location to spawn at
@@ -394,7 +393,7 @@ public class HologramManager {
         manager.spawn(switchableLeaderboard.getRightInteraction(), location);
 
         for (SwitchableLeaderboard.StateButton button : switchableLeaderboard.getStateButtons()) {
-            manager.spawn(button.getHologram(), location);
+            button.getStateHolograms().forEach(stateHologram -> manager.spawn(stateHologram, location));
             manager.spawn(button.getInteraction(), location);
         }
 
@@ -413,7 +412,6 @@ public class HologramManager {
 
     /**
      * Removes a SwitchableLeaderboard and all its components
-     * This method should be added to HologramManager
      *
      * @param manager The HologramManager instance
      * @param switchableLeaderboard The switchable leaderboard to remove
@@ -441,7 +439,9 @@ public class HologramManager {
 
 
         for (SwitchableLeaderboard.StateButton button : switchableLeaderboard.getStateButtons()) {
-            success &= manager.remove(button.getHologram());
+            for (TextHologram stateHologram : button.getStateHolograms()) {
+                success &= manager.remove(stateHologram);
+            }
             success &= manager.removeInteractionBox(button.getInteraction());
         }
 

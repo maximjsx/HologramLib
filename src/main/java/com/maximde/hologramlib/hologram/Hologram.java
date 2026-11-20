@@ -155,7 +155,7 @@ public abstract class Hologram<T extends Hologram<T>> {
 
     private void startRunnable() {
         if (task != null) return;
-        task = BukkitTasks.runTaskTimerAsync(this::updateAffectedPlayers, 20L, updateTaskPeriod);
+        task = BukkitTasks.runTaskTimer(this::updateAffectedPlayers, 20L, updateTaskPeriod);
     }
 
 
@@ -482,10 +482,15 @@ public abstract class Hologram<T extends Hologram<T>> {
     /**
      * Period in ticks between updates of the hologram's viewer list.
      * Lower values mean more frequent updates but higher server load.
-     * Default is 60 ticks (3 seconds).
+     * Default is 20 ticks (1 second).
      */
     public T setUpdateTaskPeriod(long updateTaskPeriod) {
         this.updateTaskPeriod = updateTaskPeriod;
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+            task = null;
+            startRunnable();
+        }
         return self();
     }
 

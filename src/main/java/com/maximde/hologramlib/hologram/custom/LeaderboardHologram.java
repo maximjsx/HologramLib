@@ -1,9 +1,13 @@
 package com.maximde.hologramlib.hologram.custom;
 
+import com.github.retrooper.packetevents.protocol.item.ItemStack;
+import com.github.retrooper.packetevents.protocol.item.type.ItemTypes;
 import com.maximde.hologramlib.hologram.ItemHologram;
 import com.maximde.hologramlib.hologram.RenderMode;
 import com.maximde.hologramlib.hologram.TextHologram;
+import com.maximde.hologramlib.utils.BukkitTasks;
 import com.maximde.hologramlib.utils.PlayerHeadComponent;
+import com.maximde.hologramlib.utils.PlayerUtils;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -22,7 +26,8 @@ import java.util.*;
 @ApiStatus.Experimental
 public class LeaderboardHologram {
 
-    private static final Map<String, LeaderboardHologram> hologramIdToLeaderboard = new WeakHashMap<>();
+    // Read by the Bedrock head filter on netty threads.
+    private static final Map<String, LeaderboardHologram> hologramIdToLeaderboard = Collections.synchronizedMap(new WeakHashMap<>());
 
     private final String baseId;
     private final TextHologram textHologram;
@@ -60,7 +65,9 @@ public class LeaderboardHologram {
         hologramIdToLeaderboard.put(textHologram.getId(), this);
 
         if (options.leaderboardType() == LeaderboardType.TOP_PLAYER_HEAD) {
-            this.firstPlaceHead = new ItemHologram(baseId + "_head", RenderMode.ALL);
+            // Plain head until the skin of the first place has loaded.
+            this.firstPlaceHead = new ItemHologram(baseId + "_head", RenderMode.ALL)
+                    .setItem(new ItemStack.Builder().type(ItemTypes.PLAYER_HEAD).build());
         }
     }
 
@@ -319,17 +326,38 @@ public class LeaderboardHologram {
         float headY = (float) (sorted.size() * options.lineHeight()) + 1.1f;
 
         firstPlaceHead
-                .setPlayerHead(firstUuid)
                 .setScale(2.0f, 2.0f, 0.01f)
                 .setTranslation(0f, headY, 0f)
                 .setBillboard(options.rotationMode() == RotationMode.DYNAMIC
                         ? Display.Billboard.VERTICAL
                         : Display.Billboard.FIXED);
 
-        if (!firstPlaceHead.isDead() && baseLocation != null) {
-            firstPlaceHead.teleport(baseLocation);
-            firstPlaceHead.update();
+        if (PlayerUtils.getCachedPlayerSkinUrl(firstUuid).isPresent()) {
+            firstPlaceHead.setPlayerHead(firstUuid);
+            refreshFirstPlaceHead();
+            return;
         }
+
+        refreshFirstPlaceHead();
+        loadFirstPlaceHeadAsync(firstUuid);
+    }
+
+    private void loadFirstPlaceHeadAsync(UUID uuid) {
+        BukkitTasks.runTaskAsync(() -> {
+            PlayerUtils.getPlayerSkinUrl(uuid);
+            BukkitTasks.runTask(() -> {
+                List<Map.Entry<UUID, PlayerScore>> sorted = getSortedEntries();
+                if (sorted.isEmpty() || !sorted.get(0).getKey().equals(uuid)) return;
+                firstPlaceHead.setPlayerHead(uuid);
+                refreshFirstPlaceHead();
+            });
+        });
+    }
+
+    private void refreshFirstPlaceHead() {
+        if (firstPlaceHead.isDead() || baseLocation == null) return;
+        firstPlaceHead.teleport(baseLocation);
+        firstPlaceHead.update();
     }
 
     /**

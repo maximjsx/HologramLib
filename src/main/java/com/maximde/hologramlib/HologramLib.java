@@ -15,10 +15,7 @@ import com.maximde.hologramlib.listener.PlayerJoinListener;
 import com.maximde.hologramlib.listener.PlayerQuitListener;
 import com.maximde.hologramlib.utils.BukkitTasks;
 import com.maximde.hologramlib.utils.ItemsAdderHolder;
-import com.maximde.hologramlib.utils.PlayerUtils;
 import com.maximde.hologramlib.utils.ReplaceText;
-import com.maximjsx.addonlib.core.AddonLib;
-import com.maximjsx.addonlib.util.Logger;
 import com.tcoded.folialib.FoliaLib;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
@@ -26,12 +23,10 @@ import me.tofaa.entitylib.APIConfig;
 import me.tofaa.entitylib.EntityLib;
 import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandMap;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -74,23 +69,15 @@ public abstract class HologramLib {
         PacketEvents.getAPI().load();
     }
 
-    private static void registerCommand(org.bukkit.command.Command command) {
-        if(plugin == null) return;
-        try {
-            final Field bukkitCommandMap = Bukkit.getServer().getClass().getDeclaredField("commandMap");
-            bukkitCommandMap.setAccessible(true);
-            CommandMap commandMap = (CommandMap) bukkitCommandMap.get(Bukkit.getServer());
-            commandMap.register(plugin.getDescription().getName(), command);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    /**
+     * @deprecated HologramLib no longer registers a command, {@code registerCommand} is ignored. Use {@link #init()}.
+     */
+    @Deprecated
+    public static void init(boolean registerCommand) {
+        init();
     }
 
     public static void init() {
-        init(true);
-    }
-
-    public static void init(boolean registerCommand) {
         if(loading || initialized) return;
 
         if(plugin == null) {
@@ -118,7 +105,6 @@ public abstract class HologramLib {
             initializeManagers();
             initializeMetrics();
             initializeReplaceText();
-            PlayerUtils.loadPlaceholders();
 
             FoliaLib foliaLib = new FoliaLib(plugin);
             BukkitTasks.setPlugin(plugin);
@@ -151,12 +137,6 @@ public abstract class HologramLib {
                 HeadDatabaseHook.init();
             }
 
-            /*AddonLib addonLib = new AddonLib((logLevel, message) -> Bukkit.getLogger().log(toJavaUtilLevel(logLevel), message), plugin.getDataFolder(), plugin.getDescription().getVersion());
-            addonLib.setEnabledAddons(new String[]{})
-                    .init();
-            if(registerCommand) registerCommand(new HoloCommand(addonLib));*/
-
-
             initialized = true;
             plugin.getLogger().log(Level.INFO, "Successfully initialized!");
         } catch (Exception e) {
@@ -167,22 +147,13 @@ public abstract class HologramLib {
     }
 
     public static void onDisable() {
+        if (hologramManager == null) return;
         try {
             hologramManager.removeAll();
             hologramManager.removeAllInteractionBoxes();
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Failed to remove holograms on disable", e);
         }
-    }
-
-
-    public static Level toJavaUtilLevel(Logger.LogLevel logLevel) {
-        return switch (logLevel) {
-            case INFO -> Level.INFO;
-            case SUCCESS -> Level.FINE;
-            case WARNING -> Level.WARNING;
-            case ERROR -> Level.SEVERE;
-        };
     }
 
     private static void initializePacketEvents() {

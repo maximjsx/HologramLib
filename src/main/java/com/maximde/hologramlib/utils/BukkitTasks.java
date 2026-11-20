@@ -84,6 +84,20 @@ public final class BukkitTasks {
         }
     }
 
+    public static TaskHandle runTaskTimer(Runnable runnable, long delay, long period) {
+        if (foliaLib.isFolia()) {
+            return createTaskHandle(foliaLib.getScheduler().runTimer(runnable, delay, period));
+        }
+        BukkitRunnable bukkitRunnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                runnable.run();
+            }
+        };
+        bukkitRunnable.runTaskTimer(plugin, delay, period);
+        return createTaskHandle(bukkitRunnable);
+    }
+
     public static TaskHandle runTaskTimerAsync(Runnable runnable, long delay, long period) {
         if (foliaLib.isFolia()) {
             WrappedTask wrappedTask = foliaLib.getScheduler().runTimerAsync(runnable, delay, period);

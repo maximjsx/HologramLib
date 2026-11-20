@@ -92,7 +92,7 @@ public class BlockHologram extends Hologram<BlockHologram> {
         copy.teleportDuration = this.teleportDuration;
         copy.interpolationDurationTransformation = this.interpolationDurationTransformation;
         copy.viewRange = this.viewRange;
-        copy.updateTaskPeriod = this.updateTaskPeriod;
+        copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
         return copy;
     }

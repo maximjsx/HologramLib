@@ -11,7 +11,7 @@ import me.tofaa.entitylib.meta.EntityMeta;
 import me.tofaa.entitylib.meta.display.AbstractDisplayMeta;
 import me.tofaa.entitylib.meta.display.TextDisplayMeta;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.flattener.ComponentFlattener;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -22,7 +22,11 @@ import java.util.concurrent.ThreadLocalRandom;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextHologram extends Hologram<TextHologram> {
 
-    public static final int TEXT_DISPLAY_META_INDEX = 15; // Index for the text component in TextDisplayMeta
+    /**
+     * @deprecated Never used by HologramLib and not the text index of the metadata packet (23 since 1.20.2).
+     */
+    @Deprecated
+    public static final int TEXT_DISPLAY_META_INDEX = 15;
 
     @Getter
     protected String rawText = "";
@@ -117,7 +121,7 @@ public class TextHologram extends Hologram<TextHologram> {
         copy.glowing = this.glowing;
         copy.glowColor = this.glowColor;
         copy.textOpacity = this.textOpacity;
-        copy.updateTaskPeriod = this.updateTaskPeriod;
+        copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
         copy.placeholderApiEnabled = this.placeholderApiEnabled;
         return copy;
@@ -185,8 +189,11 @@ public class TextHologram extends Hologram<TextHologram> {
         return this.text;
     }
 
+
     public String getText() {
-        return ((TextComponent) this.text).content();
+        StringBuilder plain = new StringBuilder();
+        ComponentFlattener.basic().flatten(this.text, plain::append);
+        return plain.toString();
     }
 
     public String getTextWithoutColor() {

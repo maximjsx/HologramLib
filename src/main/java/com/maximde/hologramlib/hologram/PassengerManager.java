@@ -8,12 +8,12 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetPassengers;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PassengerManager implements PacketListener {
 
-    private static final Map<Integer, int[]> passengers = new HashMap<>();
+    private static final Map<Integer, int[]> passengers = new ConcurrentHashMap<>();
 
     public PassengerManager(PacketEventsAPI<?> packetEventsAPI) {
         packetEventsAPI.getEventManager().registerListener(this, PacketListenerPriority.NORMAL);

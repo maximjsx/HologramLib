@@ -14,7 +14,7 @@ public class PlayerQuitListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         hologramManager.getEventHandlers().forEach(handler ->
-                handler.onJoin(event.getPlayer()));
+                handler.onQuit(event.getPlayer()));
     }
 
 }

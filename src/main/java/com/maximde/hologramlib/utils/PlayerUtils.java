@@ -292,6 +292,14 @@ public class PlayerUtils {
         return null;
     }
 
+    public static Optional<String> getCachedPlayerSkinUrl(UUID uuid) {
+        if (uuid == null) return Optional.empty();
+        synchronized (skinUrlCache) {
+            Optional<String> cached = skinUrlCache.get(uuid);
+            return cached == null ? Optional.empty() : Optional.of(cached.orElse(DEFAULT_SKIN_URL));
+        }
+    }
+
     @Nullable
     public static String getPlayerSkinUrl(UUID uuid) {
         if (uuid == null) {

@@ -121,7 +121,7 @@ public class InteractionBox {
 
     private void startRunnable() {
         if (task != null) return;
-        task = BukkitTasks.runTaskTimerAsync(this::updateAffectedPlayers, 20L, updateTaskPeriod);
+        task = BukkitTasks.runTaskTimer(this::updateAffectedPlayers, 20L, updateTaskPeriod);
     }
 
     private class InternalSetters implements Internal {
@@ -399,6 +399,11 @@ public class InteractionBox {
 
     public InteractionBox setUpdateTaskPeriod(long updateTaskPeriod) {
         this.updateTaskPeriod = updateTaskPeriod;
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+            task = null;
+            startRunnable();
+        }
         return this;
     }
 
@@ -498,7 +503,7 @@ public class InteractionBox {
         copy.width = this.width;
         copy.height = this.height;
         copy.responsive = this.responsive;
-        copy.updateTaskPeriod = this.updateTaskPeriod;
+        copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
         return copy;
     }
