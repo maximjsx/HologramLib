@@ -4,14 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Getter
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextAnimation {
 
-    private final List<String> textFrames = new ArrayList<>();
+    // The animation task reads the frames while the plugin may still add some, on Folia from another thread.
+    private final List<String> textFrames = new CopyOnWriteArrayList<>();
 
     /**
      * The display will be updated every x ticks

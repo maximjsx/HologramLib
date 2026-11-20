@@ -192,6 +192,16 @@ public abstract class Hologram<T extends Hologram<T>> {
         return self();
     }
 
+    protected void sendChanges(Runnable setters) {
+        EntityMeta meta = this.entity.getEntityMeta();
+        meta.setNotifyAboutChanges(false);
+        try {
+            setters.run();
+        } finally {
+            meta.setNotifyAboutChanges(true);
+        }
+    }
+
     public T setRenderMode(RenderMode newRenderMode) {
         if (newRenderMode == null) throw new IllegalArgumentException("RenderMode cannot be null");
         if (this.renderMode == newRenderMode) return self();
