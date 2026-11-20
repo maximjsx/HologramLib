@@ -9,8 +9,8 @@
 
 
   <p>Leave a :star: if you like this library :octocat:</p>
-  <h3>Display Entity Based Hologram Library</h3>
-  <p>Packet-based • Feature-rich • Developer-friendly</p>
+  <h3>The Universal Hologram Plugin</h3>
+  <p>Packet-based ✔ Customizable ✔ Easy to use ✔ Versions 1.19.4 - 26.3 ✔</p>
 </div>
 
 ---
