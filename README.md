@@ -2,10 +2,10 @@
   <img width="650px" src="assets/banner.png" alt="HologramLib Banner">
   
   [![Discord](https://img.shields.io/badge/Discord_Server-7289DA?style=flat&logo=discord&logoColor=white)](https://discord.gg/2UTkYj26B4)
-  [![Wiki](https://img.shields.io/badge/Documentation-Wiki-2dad10)](https://github.com/HologramLib/HologramLib/wiki)
-  [![JitPack](https://jitpack.io/v/HologramLib/HologramLib.svg)](https://jitpack.io/#HologramLib/HologramLib)
+  [![Wiki](https://img.shields.io/badge/Documentation-Wiki-2dad10)](https://github.com/maximjsx/HologramLib/wiki)
+  [![JitPack](https://jitpack.io/v/maximjsx/HologramLib.svg)](https://jitpack.io/#maximjsx/HologramLib)
   [![JavaDocs](https://img.shields.io/badge/API-Docs-2ECC71)](https://HologramLib.github.io/HologramLib/)
-  [![GitHub Downloads](https://img.shields.io/github/downloads/HologramLib/HologramLib/total?color=2ECC71)](https://github.com/HologramLib/HologramLib/releases)
+  [![GitHub Downloads](https://img.shields.io/github/downloads/maximjsx/HologramLib/total?color=2ECC71)](https://github.com/maximjsx/HologramLib/releases)
 
 
   <p>Leave a :star: if you like this library :octocat:</p>
@@ -15,14 +15,14 @@
 
 ---
 
-1. [Installation](https://github.com/HologramLib/HologramLib/wiki/1.-Installation)  
-2. [Getting Started](https://github.com/HologramLib/HologramLib/wiki/2.-Getting-Started)  
-   - [Creating Holograms](https://github.com/HologramLib/HologramLib/wiki/3.-Creating-Holograms)  
-   - [Hologram Management](https://github.com/HologramLib/HologramLib/wiki/4.-Hologram-Management)  
-   - [Leaderboards](https://github.com/HologramLib/HologramLib/wiki/5.-Leaderboards)  
-   - [Animations](https://github.com/HologramLib/HologramLib/wiki/6.-Animations)  
+1. [Installation](https://github.com/maximjsx/HologramLib/wiki/1.-Installation)  
+2. [Getting Started](https://github.com/maximjsx/HologramLib/wiki/2.-Getting-Started)  
+   - [Creating Holograms](https://github.com/maximjsx/HologramLib/wiki/3.-Creating-Holograms)  
+   - [Hologram Management](https://github.com/maximjsx/HologramLib/wiki/4.-Hologram-Management)  
+   - [Leaderboards](https://github.com/maximjsx/HologramLib/wiki/5.-Leaderboards)  
+   - [Animations](https://github.com/maximjsx/HologramLib/wiki/6.-Animations)  
 
-<a href="https://github.com/HologramLib/HologramLib/releases/download/1.8.3/HologramLib-1.8.3.jar">
+<a href="https://github.com/maximjsx/HologramLib/releases/download/1.8.3/HologramLib-1.8.3.jar">
   <img width="200px" src="https://github.com/HologramLib/Addons/blob/main/download_jar.svg" alt="Download"/>
 </a>
 
@@ -55,7 +55,7 @@ Entity attachment • Per-player visibility • View distance control
 - [PacketEvents](https://www.spigotmc.org/resources/80279/) (Required)
 
 If you want to learn how to use HologramLib in your plugin, check out the detailed guide here:  
-👉 [HologramLib Wiki](https://github.com/HologramLib/HologramLib/wiki)
+👉 [HologramLib Wiki](https://github.com/maximjsx/HologramLib/wiki)
 
 ---
 
@@ -68,7 +68,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.HologramLib:HologramLib:1.8.5'
+    implementation 'com.github.maximjsx:HologramLib:1.8.5'
 }
 ```
 
@@ -96,9 +96,9 @@ manager.spawn(hologram);
 
 | Resource | Description | 
 |----------|-------------|
-| [📖 Complete Wiki](https://github.com/HologramLib/HologramLib/wiki) | Setup guides • Detailed examples • Best practices |
+| [📖 Complete Wiki](https://github.com/maximjsx/HologramLib/wiki) | Setup guides • Detailed examples • Best practices |
 | [💡 Example Plugin](https://github.com/HologramLib/ExamplePlugin) | Production-ready implementations |
-| [🎥 Tutorial Series](https://github.com/HologramLib/HologramLib) | Video walkthroughs (Coming Soon) |
+| [🎥 Tutorial Series](https://github.com/maximjsx/HologramLib) | Video walkthroughs (Coming Soon) |
 
 ---
 
@@ -161,7 +161,7 @@ Contributions to this repo or the example plugin are welcome!
   <a href="https://hangar.papermc.io/maximjsx/HologramLib">Hangar</a> •
   <a href="https://modrinth.com/plugin/hologramlib">Modrinth</a> •
   <a href="https://maximjsx.com/projects/hologramlib">Maxim.jsx</a> •
-  <a href="https://github.com/HologramLib/HologramLib/releases/latest">Latest Release</a> •
+  <a href="https://github.com/maximjsx/HologramLib/releases/latest">Latest Release</a> •
   <a href="https://discord.gg/2UTkYj26B4">Support</a><br>
   <sub>License: GPL-3.0 | © 2026 <a href="https://github.com/maximjsx/">Maxim</a></sub>
 </div>

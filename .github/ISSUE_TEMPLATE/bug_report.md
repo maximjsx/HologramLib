@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **Checklist**
 - [ ] I am using the latest version of the HologramAPI and packetevents.
-- [ ] I have followed the [installation instructions](https://github.com/max1mde/HologramLib/wiki/1.-Installation) outlined in the WIKI.
+- [ ] I have followed the [installation instructions](https://github.com/maximjsx/HologramLib/wiki/1.-Installation) outlined in the WIKI.
 - [ ] The issue is not a duplicate (searched existing issues).
 
 **To Reproduce**
