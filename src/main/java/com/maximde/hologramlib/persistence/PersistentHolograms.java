@@ -152,7 +152,7 @@ public final class PersistentHolograms implements Listener {
     }
 
     private <H extends Hologram<H>> H spawnConfigured(H hologram, HologramData data, Location location) {
-        hologram.setScale(data.scale(), data.scale(), data.scale())
+        hologram.setScale(data.scale().x(), data.scale().y(), data.scale().z())
                 .setBillboard(data.billboard())
                 .setViewPermission(data.viewPermission());
         if (!data.actions().isEmpty()) hologram.onInteract(player -> ClickAction.runAll(data.actions(), player));

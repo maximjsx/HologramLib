@@ -98,7 +98,7 @@ public final class HologramStore {
             section.set("location.z", data.z());
             section.set("location.yaw", data.yaw());
             section.set("content", data.content());
-            section.set("scale", data.scale());
+            section.set("scale", scaleToYaml(data.scale()));
             section.set("billboard", data.billboard().name());
             if (data.backgroundColor() != null) section.set("background", ArgbColor.format(data.backgroundColor()));
             if (data.shadow()) section.set("shadow", true);
@@ -133,13 +133,24 @@ public final class HologramStore {
                 section.getDouble("location.z"),
                 (float) section.getDouble("location.yaw"),
                 section.getString("content", ""),
-                (float) section.getDouble("scale", 1),
+                scaleFromYaml(section),
                 Enums.parse(Display.Billboard.class, section.getString("billboard", "")).orElse(Display.Billboard.CENTER),
                 Optional.ofNullable(section.getString("background")).flatMap(ArgbColor::parse).orElse(null),
                 section.getBoolean("shadow"),
                 section.getBoolean("placeholders"),
                 section.getString("permission"),
                 actions(id, section.getStringList("actions"))));
+    }
+
+    private static Object scaleToYaml(HologramData.Scale scale) {
+        if (scale.isUniform()) return scale.x();
+        return List.of(scale.x(), scale.y(), scale.z());
+    }
+
+    private static HologramData.Scale scaleFromYaml(ConfigurationSection section) {
+        List<Double> axes = section.getDoubleList("scale");
+        if (axes.size() == 3) return new HologramData.Scale(axes.get(0).floatValue(), axes.get(1).floatValue(), axes.get(2).floatValue());
+        return HologramData.Scale.uniform((float) section.getDouble("scale", 1));
     }
 
     private List<ClickAction> actions(String id, List<String> written) {

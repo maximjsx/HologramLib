@@ -1,9 +1,9 @@
 package com.maximde.hologramlib.command;
 
 import com.maximde.hologramlib.persistence.ClickAction;
-import com.maximde.hologramlib.persistence.DecentHologramsImporter;
 import com.maximde.hologramlib.persistence.HologramData;
 import com.maximde.hologramlib.persistence.PersistentHolograms;
+import com.maximde.hologramlib.persistence.importer.HologramImporter;
 import com.maximde.hologramlib.utils.BukkitTasks;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -49,7 +49,7 @@ public final class HologramCommand implements TabExecutor {
 
     private final PersistentHolograms holograms;
     private final Messages messages;
-    private final DecentHologramsImporter importer;
+    private final List<HologramImporter> importers;
     private final Map<String, Subcommand> subcommands = buildSubcommands();
 
     private Map<String, Subcommand> buildSubcommands() {
@@ -63,8 +63,8 @@ public final class HologramCommand implements TabExecutor {
         subcommands.put("tp", new Subcommand("tp <id>", 1, true, this::teleport));
         subcommands.put("copy", new Subcommand("copy <id> <new id>", 2, true, this::copy));
         subcommands.put("text", new Subcommand("text <id> <content>", 2, false, this::text));
-        subcommands.put("scale", new Subcommand("scale <id> <scale>", 2, false, (sender, args) ->
-                edit(sender, args[1], data -> data.withScale(Arguments.positive(args[2])))));
+        subcommands.put("scale", new Subcommand("scale <id> <scale|x y z>", 2, false, (sender, args) ->
+                edit(sender, args[1], data -> data.withScale(Arguments.scale(args, 2)))));
         subcommands.put("billboard", new Subcommand("billboard <id> <fixed|vertical|horizontal|center>", 2, false, (sender, args) ->
                 edit(sender, args[1], data -> data.withBillboard(Arguments.option(Display.Billboard.class, args[2])))));
         subcommands.put("background", new Subcommand("background <id> <#AARRGGBB|none>", 2, false, (sender, args) ->
@@ -76,7 +76,7 @@ public final class HologramCommand implements TabExecutor {
         subcommands.put("permission", new Subcommand("permission <id> <permission|none>", 2, false, (sender, args) ->
                 edit(sender, args[1], data -> data.withViewPermission(isNone(args[2]) ? null : args[2]))));
         subcommands.put("action", new Subcommand("action <id> <add <TYPE:data>|clear>", 2, false, this::action));
-        subcommands.put("import", new Subcommand("import decentholograms", 1, false, this::importHolograms));
+        subcommands.put("import", new Subcommand("import <plugin>", 1, false, this::importHolograms));
         return subcommands;
     }
 
@@ -185,26 +185,28 @@ public final class HologramCommand implements TabExecutor {
     }
 
     private void importHolograms(CommandSender sender, String[] args) {
-        if (!args[1].equalsIgnoreCase("decentholograms")) {
-            throw new CommandFailure("unknown-option", unparsed("value", args[1]), unparsed("options", "decentholograms"));
-        }
-        messages.send(sender, "import-started", unparsed("source", "DecentHolograms"));
+        HologramImporter importer = importers.stream()
+                .filter(candidate -> candidate.key().equalsIgnoreCase(args[1]))
+                .findFirst()
+                .orElseThrow(() -> new CommandFailure("unknown-option", unparsed("value", args[1]),
+                        unparsed("options", importers.stream().map(HologramImporter::key).collect(Collectors.joining(", ")))));
+        messages.send(sender, "import-started", unparsed("source", importer.getName()));
         importer.read()
                 .thenAccept(result -> BukkitTasks.runTask(() -> result.ifPresentOrElse(
-                        found -> saveImported(sender, found),
-                        () -> messages.send(sender, "import-no-folder", unparsed("folder", importer.getFolder().toString())))))
+                        found -> saveImported(sender, importer, found),
+                        () -> messages.send(sender, "import-nothing-found", unparsed("source", importer.getSource().toString())))))
                 .exceptionally(error -> {
                     BukkitTasks.runTask(() -> messages.send(sender, "import-failed"));
                     return null;
                 });
     }
 
-    private void saveImported(CommandSender sender, DecentHologramsImporter.Result result) {
+    private void saveImported(CommandSender sender, HologramImporter importer, HologramImporter.Result result) {
         List<HologramData> fresh = result.holograms().stream().filter(data -> !holograms.exists(data.id())).toList();
         int imported = holograms.putAll(fresh);
         int skipped = result.skipped() + result.holograms().size() - imported;
         messages.send(sender, "imported", unparsed("count", String.valueOf(imported)),
-                unparsed("source", "DecentHolograms"), unparsed("skipped", String.valueOf(skipped)));
+                unparsed("source", importer.getName()), unparsed("skipped", String.valueOf(skipped)));
     }
 
     private void edit(CommandSender sender, String id, UnaryOperator<HologramData> change) {
@@ -240,7 +242,7 @@ public final class HologramCommand implements TabExecutor {
         if (args.length == 1) return Stream.concat(Stream.of("help"), subcommands.keySet().stream()).toList();
         if (args.length == 2) {
             return switch (subcommand) {
-                case "import" -> List.of("decentholograms");
+                case "import" -> importers.stream().map(HologramImporter::key).toList();
                 case "help", "list", "near", "create" -> List.of();
                 default -> holograms.all().stream().map(HologramData::id).toList();
             };
@@ -289,5 +291,10 @@ public final class HologramCommand implements TabExecutor {
 
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static String format(HologramData.Scale scale) {
+        if (scale.isUniform()) return format(scale.x());
+        return format(scale.x()) + " " + format(scale.y()) + " " + format(scale.z());
     }
 }

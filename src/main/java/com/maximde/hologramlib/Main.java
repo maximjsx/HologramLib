@@ -4,13 +4,17 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.maximde.hologramlib.command.HologramCommand;
 import com.maximde.hologramlib.command.Messages;
-import com.maximde.hologramlib.persistence.DecentHologramsImporter;
 import com.maximde.hologramlib.persistence.PersistentHolograms;
+import com.maximde.hologramlib.persistence.importer.DecentHologramsImporter;
+import com.maximde.hologramlib.persistence.importer.FancyHologramsImporter;
+import com.maximde.hologramlib.persistence.importer.HologramImporter;
+import com.maximde.hologramlib.persistence.importer.HolographicDisplaysImporter;
 import com.maximde.hologramlib.utils.BukkitTasks;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -34,15 +38,18 @@ public class Main extends JavaPlugin {
     }
 
     private void enableCommand(PersistentHolograms persistentHolograms) {
-        Path decentHolograms = getDataFolder().toPath().resolveSibling("DecentHolograms").resolve("holograms");
-        DecentHologramsImporter importer = new DecentHologramsImporter(decentHolograms, getLogger());
+        Path plugins = getDataFolder().toPath().getParent();
+        List<HologramImporter> importers = List.of(
+                new DecentHologramsImporter(plugins, getLogger()),
+                new FancyHologramsImporter(plugins, getLogger()),
+                new HolographicDisplaysImporter(plugins, getLogger()));
         Messages.load(this)
                 .exceptionally(error -> {
                     getLogger().log(Level.WARNING, "Could not read messages.yml, using the default messages", error);
                     return Messages.defaults(this);
                 })
                 .thenAccept(messages -> BukkitTasks.runTask(() ->
-                        registerCommand(new HologramCommand(persistentHolograms, messages, importer))));
+                        registerCommand(new HologramCommand(persistentHolograms, messages, importers))));
     }
 
     private void registerCommand(HologramCommand command) {
