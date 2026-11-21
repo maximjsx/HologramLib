@@ -21,6 +21,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @ApiStatus.Experimental
@@ -37,7 +38,8 @@ public class LeaderboardHologram {
      */
     private ItemHologram firstPlaceHead;
 
-    private Map<UUID, PlayerScore> playerData = new HashMap<>();
+    // Plugins often set scores from async database callbacks while the text is built on another thread.
+    private volatile Map<UUID, PlayerScore> playerData = new ConcurrentHashMap<>();
     private Location baseLocation;
     /**
      * @return The yaw rotation
@@ -126,7 +128,7 @@ public class LeaderboardHologram {
      * @param data Map of UUID to PlayerScore
      */
     public void setAllScores(Map<UUID, PlayerScore> data) {
-        this.playerData = new HashMap<>(data);
+        this.playerData = new ConcurrentHashMap<>(data);
     }
 
     /**
@@ -140,7 +142,7 @@ public class LeaderboardHologram {
 
 
     private String buildLeaderboardText() {
-        if (playerData.isEmpty()) {
+        if (playerData.isEmpty() && !options.showEmptyPlaces()) {
             return "";
         }
 

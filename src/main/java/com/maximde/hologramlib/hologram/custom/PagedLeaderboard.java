@@ -166,20 +166,25 @@ public class PagedLeaderboard implements HologramManager.Events {
             page.teleport(baseLocation);
         }
 
-        if (showArrows) {
-            Location leftLoc  = computeArrowLocation(-arrowOffset);
-            Location rightLoc = computeArrowLocation( arrowOffset);
-
-            leftArrow.teleport(leftLoc).update();
-            rightArrow.teleport(rightLoc).update();
-
-            if (!singleDirectionCycling) {
-                leftInteraction.teleport(leftLoc);
-            }
-            rightInteraction.teleport(rightLoc);
-        }
+        teleportArrows();
 
         showInitialPage();
+    }
+
+    private void teleportArrows() {
+        if (!showArrows) {
+            return;
+        }
+
+        Location leftLoc  = computeArrowLocation(-arrowOffset);
+        Location rightLoc = computeArrowLocation( arrowOffset);
+
+        if (!singleDirectionCycling) {
+            leftArrow.teleport(leftLoc).update();
+            leftInteraction.teleport(leftLoc);
+        }
+        rightArrow.teleport(rightLoc).update();
+        rightInteraction.teleport(rightLoc);
     }
 
     private Location computeArrowLocation(double offset) {
@@ -373,12 +378,11 @@ public class PagedLeaderboard implements HologramManager.Events {
         }
 
         if (showArrows) {
-            leftArrow.show(player);
-            rightArrow.show(player);
-
             if (!singleDirectionCycling) {
+                leftArrow.show(player);
                 leftInteraction.show(player);
             }
+            rightArrow.show(player);
             rightInteraction.show(player);
         }
 
@@ -397,9 +401,11 @@ public class PagedLeaderboard implements HologramManager.Events {
         if (!spawned) return;
 
         if (showArrows) {
-            leftInteraction.hide(player);
+            if (!singleDirectionCycling) {
+                leftInteraction.hide(player);
+                leftArrow.hide(player);
+            }
             rightInteraction.hide(player);
-            leftArrow.hide(player);
             rightArrow.hide(player);
         }
 
@@ -541,18 +547,7 @@ public class PagedLeaderboard implements HologramManager.Events {
             page.teleport(baseLocation);
         }
 
-        if (showArrows) {
-            Location leftLoc  = computeArrowLocation(-arrowOffset);
-            Location rightLoc = computeArrowLocation( arrowOffset);
-
-            leftArrow.teleport(leftLoc).update();
-            rightArrow.teleport(rightLoc).update();
-
-            if (!singleDirectionCycling) {
-                leftInteraction.teleport(leftLoc);
-            }
-            rightInteraction.teleport(rightLoc);
-        }
+        teleportArrows();
 
         return this;
     }

@@ -24,8 +24,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -89,8 +90,9 @@ public class InteractionBox {
     /**
      * Players which will not be automatically added as viewers no matter which render mode
      */
+    // Read by the viewer update task while plugins hide and show players, so it has to be safe to share.
     @Getter
-    private final List<Player> blacklistedViewers = new ArrayList<>();
+    private final List<Player> blacklistedViewers = new CopyOnWriteArrayList<>();
 
     /**
      * Checked on every viewer update. Ignored in {@link RenderMode#VIEWER_LIST}.
@@ -171,7 +173,7 @@ public class InteractionBox {
     }
 
     public void addToViewerBlacklist(Player player) {
-        this.blacklistedViewers.add(player);
+        if (!this.blacklistedViewers.contains(player)) this.blacklistedViewers.add(player);
     }
 
     public void removeFromViewerBlacklist(Player player) {
@@ -184,7 +186,14 @@ public class InteractionBox {
      */
     public InteractionBox update() {
         this.updateAffectedPlayers();
-        this.applyMeta();
+        // With notifications on, EntityLib resends every entry for each single setter.
+        EntityMeta meta = this.entity.getEntityMeta();
+        meta.setNotifyAboutChanges(false);
+        try {
+            this.applyMeta();
+        } finally {
+            meta.setNotifyAboutChanges(true);
+        }
         return this;
     }
 
@@ -203,6 +212,7 @@ public class InteractionBox {
         this.entity.remove();
         this.task.cancel();
         this.dead = true;
+        if (attachedEntityId != null) PassengerManager.detach(attachedEntityId, this.entityID);
     }
 
     public InteractionBox teleport(Location newLocation) {
@@ -342,7 +352,9 @@ public class InteractionBox {
      */
     @ApiStatus.Experimental
     public void attach(int entityId) {
+        if (attachedEntityId != null) PassengerManager.detach(attachedEntityId, this.entityID);
         attachedEntityId = entityId;
+        PassengerManager.attach(entityId, this.entityID);
 
         if (renderMode == RenderMode.NOT_ATTACHED_PLAYER) {
             Player attachedPlayer = getPlayerByEntityId(entityId);
@@ -368,6 +380,7 @@ public class InteractionBox {
                 }
             }
 
+            PassengerManager.detach(attachedEntityId, this.entityID);
             WrapperPlayServerSetPassengers detachPacket = new WrapperPlayServerSetPassengers(attachedEntityId, removeElement(PassengerManager.getPassengers(attachedEntityId), this.entityID));
             BukkitTasks.runTaskAsync(() -> this.entity.sendPacketsToViewers(detachPacket));
             attachedEntityId = null;
@@ -454,6 +467,8 @@ public class InteractionBox {
     }
 
     public InteractionBox addViewer(Player player) {
+        // The viewer task adds every player again each run, the passenger packet must only go to new viewers.
+        if (this.entity.hasViewer(player.getUniqueId())) return this;
         this.entity.addViewer(player.getUniqueId());
         if (attachedEntityId != null)
             sendPacket(new WrapperPlayServerSetPassengers(

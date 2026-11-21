@@ -144,11 +144,14 @@ public class HologramManager {
             spawn(page, location);
         }
 
-        spawn(pagedLeaderboard.getLeftArrow(), location);
-        spawn(pagedLeaderboard.getRightArrow(), location);
-
-        spawn(pagedLeaderboard.getLeftInteraction(), location);
-        spawn(pagedLeaderboard.getRightInteraction(), location);
+        if (pagedLeaderboard.isShowArrows()) {
+            if (!pagedLeaderboard.isSingleDirectionCycling()) {
+                spawn(pagedLeaderboard.getLeftArrow(), location);
+                spawn(pagedLeaderboard.getLeftInteraction(), location);
+            }
+            spawn(pagedLeaderboard.getRightArrow(), location);
+            spawn(pagedLeaderboard.getRightInteraction(), location);
+        }
 
         BukkitTasks.runTask(() -> {
             try {
@@ -180,11 +183,14 @@ public class HologramManager {
             success &= remove(page);
         }
 
-        success &= remove(pagedLeaderboard.getLeftArrow());
-        success &= remove(pagedLeaderboard.getRightArrow());
-
-        success &= removeInteractionBox(pagedLeaderboard.getLeftInteraction());
-        success &= removeInteractionBox(pagedLeaderboard.getRightInteraction());
+        if (pagedLeaderboard.isShowArrows()) {
+            if (!pagedLeaderboard.isSingleDirectionCycling()) {
+                success &= remove(pagedLeaderboard.getLeftArrow());
+                success &= removeInteractionBox(pagedLeaderboard.getLeftInteraction());
+            }
+            success &= remove(pagedLeaderboard.getRightArrow());
+            success &= removeInteractionBox(pagedLeaderboard.getRightInteraction());
+        }
 
         return success;
     }
@@ -239,18 +245,14 @@ public class HologramManager {
     }
 
     public <H extends Hologram<H>> H spawn(H hologram, Location location) {
-        this.register(hologram);
-        BukkitTasks.runTask(() -> {
-            hologram.getInternalAccess().spawn(location, true).update();
-            spawn(hologram.getInteractionBox(), location);
-        });
-
-        return hologram;
+        return spawn(hologram, location, true);
     }
 
     public <H extends Hologram<H>> H spawn(H hologram, Location location,  boolean ignorePitchYaw) {
         this.register(hologram);
         BukkitTasks.runTask(() -> {
+            // Removed again before this tick, spawning now would leave an entity nothing can remove.
+            if (hologramsMap.get(hologram.getId()) != hologram) return;
             try {
                 hologram.getInternalAccess().spawn(location, ignorePitchYaw).update();
                 spawn(hologram.getInteractionBox(), location, ignorePitchYaw);
