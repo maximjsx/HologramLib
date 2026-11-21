@@ -3,6 +3,7 @@ package com.maximde.hologramlib.hologram;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.util.Quaternion4f;
 import com.maximde.hologramlib.HologramLib;
+import com.maximde.hologramlib.hook.PlaceholderAPIHook;
 import com.maximde.hologramlib.utils.MiniMessage;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.joml.Vector3f;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -60,6 +64,11 @@ public class TextHologram extends Hologram<TextHologram> {
 
     @Setter @Getter @Accessors(chain = true)
     private boolean placeholderApiEnabled = false;
+
+    @Setter @Getter @Accessors(chain = true)
+    private boolean placeholderRefresh = true;
+
+    private final Map<UUID, String> placeholderTexts = new ConcurrentHashMap<>();
 
     /**
      * Creates a new text hologram with the specified ID and render mode.
@@ -123,6 +132,7 @@ public class TextHologram extends Hologram<TextHologram> {
         copy.textOpacity = this.textOpacity;
         copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
+        copy.setViewCondition(this.viewCondition);
         copy.placeholderApiEnabled = this.placeholderApiEnabled;
         return copy;
     }
@@ -254,6 +264,13 @@ public class TextHologram extends Hologram<TextHologram> {
         } catch (Exception e) {
             return this.text;
         }
+    }
+
+    @Override
+    protected void onUpdateTick() {
+        super.onUpdateTick();
+        if (dead || !placeholderApiEnabled || !placeholderRefresh || !PlaceholderAPIHook.isEnabled()) return;
+        PlaceholderAPIHook.refresh(this, placeholderTexts);
     }
 
     public String replaceFontImages(String string) {

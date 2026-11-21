@@ -44,6 +44,7 @@ dependencies {
 
     implementation("com.github.maximjsx.EntityLib:spigot:1.0.0")
     implementation("net.kyori:adventure-text-minimessage:4.26.1")
+    implementation("net.kyori:adventure-text-serializer-legacy:4.26.1")
     implementation("com.tcoded:FoliaLib:0.5.1")
 
     library(kotlin("stdlib"))
@@ -52,6 +53,10 @@ dependencies {
 
 kotlin {
     jvmToolchain(17)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
 }
 
 tasks.compileKotlin {
@@ -96,4 +101,17 @@ bukkit {
     depend = listOf("packetevents")
     softDepend = listOf("ItemsAdder", "PlaceholderAPI", "HeadDatabase")
     name = "HologramLib"
+    commands {
+        register("hologramlib") {
+            description = "Creates and edits saved holograms"
+            aliases = listOf("holo", "hl")
+            permission = "hologramlib.admin"
+        }
+    }
+    permissions {
+        register("hologramlib.admin") {
+            description = "Allows /hologramlib"
+            default = net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission.Default.OP
+        }
+    }
 }

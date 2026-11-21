@@ -11,6 +11,7 @@ import com.maximde.hologramlib.utils.TaskHandle;
 import com.maximde.hologramlib.utils.Vector3F;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 import me.tofaa.entitylib.meta.EntityMeta;
 import me.tofaa.entitylib.meta.other.InteractionMeta;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
@@ -89,6 +91,17 @@ public class InteractionBox {
      */
     @Getter
     private final List<Player> blacklistedViewers = new ArrayList<>();
+
+    /**
+     * Checked on every viewer update. Ignored in {@link RenderMode#VIEWER_LIST}.
+     */
+    @Getter
+    private volatile Predicate<Player> viewCondition = player -> true;
+
+    public InteractionBox setViewCondition(@NonNull Predicate<Player> viewCondition) {
+        this.viewCondition = viewCondition;
+        return this;
+    }
 
     @FunctionalInterface
     public interface OnInteract {
@@ -251,6 +264,7 @@ public class InteractionBox {
                     .filter(player ->
                             player.isOnline() &&
                                     !this.blacklistedViewers.contains(player) &&
+                                    this.viewCondition.test(player) &&
                                     Objects.equals(player.getLocation().getWorld(), world) &&
                                     player.getLocation().distanceSquared(this.location) <= this.maxPlayerRenderDistanceSquared
                     )
@@ -505,6 +519,7 @@ public class InteractionBox {
         copy.responsive = this.responsive;
         copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
+        copy.setViewCondition(this.viewCondition);
         return copy;
     }
 

@@ -8,6 +8,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.concurrent.CompletableFuture;
+
 public final class BukkitTasks {
 
     @Setter
@@ -52,6 +54,10 @@ public final class BukkitTasks {
             return;
         }
         runTask(runnable);
+    }
+
+    public static CompletableFuture<Boolean> teleport(Entity entity, Location location) {
+        return foliaLib.getScheduler().teleportAsync(entity, location);
     }
 
     public static void runTaskAsync(Runnable runnable) {

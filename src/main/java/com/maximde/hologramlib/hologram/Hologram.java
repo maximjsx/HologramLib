@@ -31,6 +31,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 @SuppressWarnings({"unused", "UnusedReturnValue", "deprecation", "DeprecatedIsStillUsed"})
@@ -48,6 +49,12 @@ public abstract class Hologram<T extends Hologram<T>> {
      */
     @Getter
     private final Set<Player> blacklistedViewers = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Checked on every viewer update. Ignored in {@link RenderMode#VIEWER_LIST}.
+     */
+    @Getter
+    protected volatile Predicate<Player> viewCondition = player -> true;
 
     @Getter
     protected boolean dead = true;
@@ -155,7 +162,11 @@ public abstract class Hologram<T extends Hologram<T>> {
 
     private void startRunnable() {
         if (task != null) return;
-        task = BukkitTasks.runTaskTimer(this::updateAffectedPlayers, 20L, updateTaskPeriod);
+        task = BukkitTasks.runTaskTimer(this::onUpdateTick, 20L, updateTaskPeriod);
+    }
+
+    protected void onUpdateTick() {
+        updateAffectedPlayers();
     }
 
 
@@ -305,6 +316,7 @@ public abstract class Hologram<T extends Hologram<T>> {
                     .filter(player ->
                             player.isOnline() &&
                                     !this.blacklistedViewers.contains(player) &&
+                                    this.viewCondition.test(player) &&
                                     Objects.equals(player.getLocation().getWorld(), world) &&
                                     player.getLocation().distanceSquared(this.location) <= this.maxPlayerRenderDistanceSquared
                     )
@@ -599,8 +611,19 @@ public abstract class Hologram<T extends Hologram<T>> {
         this.interactionBox = new InteractionBox(this.id + "_interaction", this.onInteract)
                 .setHeight(this.getHeight())
                 .setWidth(this.getWidth())
-                .setResponsive(true);
+                .setResponsive(true)
+                .setViewCondition(this.viewCondition);
         return self();
+    }
+
+    public T setViewCondition(@NonNull Predicate<Player> viewCondition) {
+        this.viewCondition = viewCondition;
+        if (this.interactionBox != null) this.interactionBox.setViewCondition(viewCondition);
+        return self();
+    }
+
+    public T setViewPermission(@Nullable String permission) {
+        return setViewCondition(permission == null ? player -> true : player -> player.hasPermission(permission));
     }
 
     public T disableInteraction() {
