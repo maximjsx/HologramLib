@@ -22,7 +22,7 @@ public record HologramData(
         double z,
         float yaw,
         String content,
-        float scale,
+        Scale scale,
         Display.Billboard billboard,
         @Nullable Integer backgroundColor,
         boolean shadow,
@@ -33,13 +33,26 @@ public record HologramData(
 
     public enum Type { TEXT, ITEM, BLOCK }
 
+    public record Scale(float x, float y, float z) {
+
+        public static final Scale ONE = uniform(1f);
+
+        public static Scale uniform(float scale) {
+            return new Scale(scale, scale, scale);
+        }
+
+        public boolean isUniform() {
+            return x == y && y == z;
+        }
+    }
+
     public HologramData {
         actions = List.copyOf(actions);
     }
 
     public static HologramData create(String id, Type type, Location location, String content) {
         return new HologramData(id, type, location.getWorld().getName(), location.getX(), location.getY(), location.getZ(),
-                location.getYaw(), content, 1f, defaultBillboard(type), null, true, false, null, List.of());
+                location.getYaw(), content, Scale.ONE, defaultBillboard(type), null, true, false, null, List.of());
     }
 
     public HologramData withLocation(Location location) {

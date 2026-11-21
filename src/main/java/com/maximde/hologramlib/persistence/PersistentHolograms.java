@@ -68,11 +68,19 @@ public final class PersistentHolograms implements Listener {
      */
     public synchronized boolean put(HologramData data) {
         if (!HologramContent.isValid(data)) return false;
-        despawn(data.id());
-        saved.put(data.id(), data);
-        spawn(data);
+        replace(data);
         store.save(saved.values());
         return true;
+    }
+
+    /**
+     * Like {@link #put} with a single save. returns how many were saved.
+     */
+    public synchronized int putAll(Collection<HologramData> holograms) {
+        List<HologramData> valid = holograms.stream().filter(HologramContent::isValid).toList();
+        valid.forEach(this::replace);
+        store.save(saved.values());
+        return valid.size();
     }
 
     public synchronized boolean delete(String id) {
@@ -122,6 +130,12 @@ public final class PersistentHolograms implements Listener {
                 logger.warning("The saved hologram " + data.id() + " shows no known item or block: " + data.content()));
     }
 
+    private void replace(HologramData data) {
+        despawn(data.id());
+        saved.put(data.id(), data);
+        spawn(data);
+    }
+
     private void despawn(String id) {
         Hologram<?> hologram = spawned.remove(id);
         if (hologram != null) manager.remove(hologram);
@@ -138,10 +152,10 @@ public final class PersistentHolograms implements Listener {
     }
 
     private <H extends Hologram<H>> H spawnConfigured(H hologram, HologramData data, Location location) {
-        hologram.setScale(data.scale(), data.scale(), data.scale())
+        hologram.setScale(data.scale().x(), data.scale().y(), data.scale().z())
                 .setBillboard(data.billboard())
                 .setViewPermission(data.viewPermission());
-        if (!data.actions().isEmpty()) hologram.onInteract(player -> data.actions().forEach(action -> action.run(player)));
+        if (!data.actions().isEmpty()) hologram.onInteract(player -> ClickAction.runAll(data.actions(), player));
         Bukkit.getPluginManager().callEvent(new PersistentHologramSpawnEvent(data, hologram));
         return manager.spawn(hologram, location, false);
     }

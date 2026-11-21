@@ -2,6 +2,7 @@ package com.maximde.hologramlib.command;
 
 import com.maximde.hologramlib.persistence.ArgbColor;
 import com.maximde.hologramlib.persistence.ClickAction;
+import com.maximde.hologramlib.persistence.HologramData;
 import com.maximde.hologramlib.utils.Enums;
 
 import java.util.Arrays;
@@ -27,6 +28,13 @@ final class Arguments {
 
     static String text(String[] args, int from) {
         return rest(args, from, "missing-text").replace("\\n", "<newline>");
+    }
+
+    static HologramData.Scale scale(String[] args, int from) {
+        int given = args.length - from;
+        if (given == 1) return HologramData.Scale.uniform(positive(args[from]));
+        if (given != 3) throw new CommandFailure("invalid-scale");
+        return new HologramData.Scale(positive(args[from]), positive(args[from + 1]), positive(args[from + 2]));
     }
 
     static float positive(String value) {

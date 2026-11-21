@@ -10,10 +10,11 @@ missing-text: '<red>Write the text, <white>\n</white> starts a new line.'
 missing-item: '<red>Hold an item or name one, like <white>diamond_sword</white>.'
 missing-block: '<red>Name the block, like <white>oak_stairs[facing=east]</white>.'
 not-positive: '<red><white><value></white> is not a positive number.'
+invalid-scale: '<red>Give one scale or three, for x, y and z.'
 not-boolean: '<red>Use true or false, not <white><value></white>.'
 unknown-option: '<red><white><value></white> is none of <white><options></white>.'
 invalid-color: '<red>Colors are #RRGGBB or #AARRGGBB, not <white><value></white>.'
-invalid-action: '<red>Write the action as TYPE:data, the types are MESSAGE, COMMAND, CONSOLE and SOUND.'
+invalid-action: '<red>Write the action as TYPE:data, the types are MESSAGE, COMMAND, CONSOLE, SOUND, TELEPORT, CONNECT and PERMISSION.'
 world-not-loaded: '<red>The world <white><world></white> is not loaded.'
 
 created: '<green>Created <white><id></white>.'
@@ -22,6 +23,11 @@ updated: '<green>Updated <white><id></white>.'
 moved: '<green>Moved <white><id></white> to you.'
 teleported: '<green>Teleported you to <white><id></white>.'
 copied: '<green>Copied <white><id></white> to <white><copy></white>.'
+
+import-started: '<gray>Importing from <source>...'
+imported: '<green>Imported <white><count></white> holograms from <source>, skipped <white><skipped></white>.'
+import-nothing-found: '<red>Found nothing to import in <white><source></white>.'
+import-failed: '<red>The import failed, the console has the details.'
 
 list-header: '<gold><count> saved holograms:'
 list-entry: '<gray>- <white><id></white> <dark_gray>(<type>, <world> <x> <y> <z>)'
@@ -43,4 +49,6 @@ help: |-
   <white>/<label> copy \<id> \<new id></white> <gray>copies it to where you stand
   <white>/<label> list</white> <gray>or <white>near [radius]</white>
   <white>/<label> scale|billboard|background|shadow|placeholders|permission \<id> \<value></white>
-  <white>/<label> action \<id> add \<TYPE:data>|clear</white> <gray>MESSAGE, COMMAND, CONSOLE, SOUND
+  <white>/<label> scale \<id> \<x> \<y> \<z></white> <gray>stretches it per axis
+  <white>/<label> action \<id> add \<TYPE:data>|clear</white> <gray>MESSAGE, COMMAND, CONSOLE, SOUND, TELEPORT, CONNECT, PERMISSION
+  <white>/<label> import decentholograms|fancyholograms|holographicdisplays</white> <gray>copies the holograms of that plugin
