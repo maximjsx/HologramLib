@@ -29,6 +29,9 @@ imported: '<green>Imported <white><count></white> holograms from <source>, skipp
 import-nothing-found: '<red>Found nothing to import in <white><source></white>.'
 import-failed: '<red>The import failed, the console has the details.'
 
+demo-started: '<green>Spawning <white><count></white> demo stations around you, turn around. <white>/hologramlib demo clear</white> removes them.'
+demo-cleared: '<green>Removed the demo.'
+
 list-header: '<gold><count> saved holograms:'
 list-entry: '<gray>- <white><id></white> <dark_gray>(<type>, <world> <x> <y> <z>)'
 near-header: '<gold><count> saved holograms within <radius> blocks:'
@@ -52,3 +55,4 @@ help: |-
   <white>/<label> scale \<id> \<x> \<y> \<z></white> <gray>stretches it per axis
   <white>/<label> action \<id> add \<TYPE:data>|clear</white> <gray>MESSAGE, COMMAND, CONSOLE, SOUND, TELEPORT, CONNECT, PERMISSION
   <white>/<label> import decentholograms|fancyholograms|holographicdisplays</white> <gray>copies the holograms of that plugin
+  <white>/<label> demo [clear]</white> <gray>shows every hologram feature around you

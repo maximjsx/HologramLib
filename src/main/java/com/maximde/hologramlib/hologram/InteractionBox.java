@@ -105,6 +105,10 @@ public class InteractionBox {
         return this;
     }
 
+    public boolean hasViewer(UUID uuid) {
+        return this.entity.hasViewer(uuid);
+    }
+
     @FunctionalInterface
     public interface OnInteract {
         void onInteract(Player player);

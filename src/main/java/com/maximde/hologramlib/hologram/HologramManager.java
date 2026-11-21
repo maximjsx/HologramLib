@@ -2,6 +2,7 @@ package com.maximde.hologramlib.hologram;
 
 import com.maximde.hologramlib.hologram.custom.LeaderboardHologram;
 import com.maximde.hologramlib.hologram.custom.PagedLeaderboard;
+import com.maximde.hologramlib.hologram.custom.TextLeaderboard;
 import com.maximde.hologramlib.hologram.custom.SwitchableLeaderboard;
 import com.maximde.hologramlib.utils.BukkitTasks;
 import com.maximde.hologramlib.utils.TaskHandle;
@@ -14,6 +15,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -21,6 +23,7 @@ import java.util.function.Consumer;
 public class HologramManager {
 
     private final Map<TextHologram, TaskHandle> hologramAnimations = new ConcurrentHashMap<>();
+    private final Map<Hologram<?>, RunningMotion> hologramMotions = new ConcurrentHashMap<>();
     private final Map<String, Hologram<?>> hologramsMap = new ConcurrentHashMap<>();
     private final Map<Integer, Hologram<?>> entityIdToHologramMap = new ConcurrentHashMap<>();
     private final Map<String, InteractionBox> interactionBoxesById = new ConcurrentHashMap<>();
@@ -58,6 +61,15 @@ public class HologramManager {
 
     public Optional<InteractionBox> getInteractionBoxByEntityId(int entityId) {
         return Optional.ofNullable(interactionBoxesByEntityId.get(entityId));
+    }
+
+    /**
+     * The hologram whose {@link Hologram#onInteract} created {@code interactionBox}, empty for a box spawned on its own.
+     */
+    public Optional<Hologram<?>> getHologramOf(InteractionBox interactionBox) {
+        return hologramsMap.values().stream()
+                .filter(hologram -> hologram.getInteractionBox() == interactionBox)
+                .findFirst();
     }
 
     public List<InteractionBox> getInteractionBoxes() {
@@ -265,6 +277,39 @@ public class HologramManager {
         return hologram;
     }
 
+    /**
+     * Spawns the board facing the yaw of {@code location}, which is the bottom middle of its text.
+     */
+    public TextLeaderboard spawn(TextLeaderboard leaderboard, Location location) {
+        return leaderboard.spawn(this, location);
+    }
+
+    public boolean remove(TextLeaderboard leaderboard) {
+        return leaderboard.remove(this);
+    }
+
+    /**
+     * Plays {@code transition} out over {@code ticks}, runs {@code change} while the hologram cannot be seen and plays
+     * it back in. A motion the hologram was playing stops.
+     *
+     * @param width  the hologram's width in blocks, how far it slides
+     * @param height the hologram's height in blocks, it turns and folds around its middle
+     */
+    public void transition(Hologram<?> hologram, Transition transition, int ticks, float width, float height,
+                           Runnable change) {
+        if (transition == Transition.NONE || ticks <= 0) {
+            change.run();
+            return;
+        }
+        applyMotion(hologram, transition.out(ticks, width, height));
+        // out motion ends on its own, so in starts without snapping back
+        BukkitTasks.runTaskLater(() -> {
+            if (hologramsMap.get(hologram.getId()) != hologram) return;
+            change.run();
+            applyMotion(hologram, transition.in(ticks, width, height));
+        }, ticks + 2L);
+    }
+
     public void attach(Hologram<?> hologram, int entityID) {
         hologram.attach(entityID);
     }
@@ -291,6 +336,7 @@ public class HologramManager {
         if (hologram != null) {
             entityIdToHologramMap.remove(hologram.getEntityID());
             if (hologram instanceof TextHologram textHologram) cancelAnimation(textHologram);
+            stopMotion(hologram);
             hologram.getInternalAccess().kill();
             removeInteractionBox(hologram.getInteractionBox());
 
@@ -302,6 +348,7 @@ public class HologramManager {
     public void removeAll() {
         hologramsMap.values().forEach(hologram -> {
             if (hologram instanceof TextHologram textHologram) cancelAnimation(textHologram);
+            stopMotion(hologram);
             hologram.getInternalAccess().kill();
         });
 
@@ -325,6 +372,40 @@ public class HologramManager {
     }
 
 
+    /**
+     * Plays a motion on any hologram, replacing the motion it played before. Text animations keep running.
+     */
+    public void applyMotion(Hologram<?> hologram, MotionAnimation motion) {
+        cancelMotion(hologram);
+        MotionAnimation.Playback playback = new MotionAnimation.Playback(hologram, motion);
+        AtomicReference<TaskHandle> task = new AtomicReference<>();
+        task.set(BukkitTasks.runTaskTimer(() -> {
+            if (playback.tick()) return;
+            hologramMotions.remove(hologram);
+            Optional.ofNullable(task.get()).ifPresent(TaskHandle::cancel);
+        }, 1L, 1L));
+        hologramMotions.put(hologram, new RunningMotion(playback, task.get()));
+    }
+
+    /**
+     * Stops the hologram's motion and puts it back the way it was before the motion started.
+     */
+    public void cancelMotion(Hologram<?> hologram) {
+        Optional.ofNullable(stopMotion(hologram)).ifPresent(running -> running.playback().restore());
+    }
+
+    public boolean hasMotion(Hologram<?> hologram) {
+        return hologramMotions.containsKey(hologram);
+    }
+
+    private RunningMotion stopMotion(Hologram<?> hologram) {
+        RunningMotion running = hologramMotions.remove(hologram);
+        if (running != null) running.task().cancel();
+        return running;
+    }
+
+    private record RunningMotion(MotionAnimation.Playback playback, TaskHandle task) {}
+
     public void applyAnimation(TextHologram hologram, TextAnimation textAnimation) {
         cancelAnimation(hologram);
         hologramAnimations.put(hologram, animateHologram(hologram, textAnimation));
@@ -341,7 +422,7 @@ public class HologramManager {
             if (frames.isEmpty()) return;
             hologram.setMiniMessageText(frames.get(Math.floorMod(frame.getAndIncrement(), frames.size())));
             hologram.updateText();
-        }, textAnimation.getDelay(), textAnimation.getSpeed());
+        }, Math.max(1, textAnimation.getDelay()), Math.max(1, textAnimation.getSpeed()));
     }
 
     public void ifHologramExists(String id, Consumer<Hologram<?>> action) {

@@ -5,6 +5,7 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.maximde.hologramlib.event.HologramInteractEvent;
 import com.maximde.hologramlib.hologram.HologramManager;
 import com.maximde.hologramlib.hologram.InteractionBox;
 import com.maximde.hologramlib.utils.BukkitTasks;
@@ -28,10 +29,14 @@ public class InteractionPacketListener implements PacketListener {
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
         int entityId;
+        boolean leftClick;
         if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
-            entityId = new WrapperPlayClientInteractEntity(event).getEntityId();
+            WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
+            entityId = interact.getEntityId();
+            leftClick = interact.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK;
         } else if (ATTACK.equals(event.getPacketType().getName())) {
             entityId = new WrapperPlayClientAttack(event).getEntityId();
+            leftClick = true;
         } else {
             return;
         }
@@ -59,6 +64,11 @@ public class InteractionPacketListener implements PacketListener {
                     return;
                 }
                 lastProcessedInteraction.put(playerUUID, now);
+
+                HologramInteractEvent interactEvent = new HologramInteractEvent(player, interactionBox.get(),
+                        hologramManager.getHologramOf(interactionBox.get()).orElse(null), leftClick);
+                Bukkit.getPluginManager().callEvent(interactEvent);
+                if (interactEvent.isCancelled()) return;
 
                 interactionBox.get().triggerInteraction((player));
             }

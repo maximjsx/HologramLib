@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.util.Quaternion4f;
 import com.maximde.hologramlib.HologramLib;
 import com.maximde.hologramlib.hook.PlaceholderAPIHook;
+import com.maximde.hologramlib.listener.PerPlayerTextListener;
 import com.maximde.hologramlib.utils.MiniMessage;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,10 +19,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.joml.Vector3f;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextHologram extends Hologram<TextHologram> {
@@ -65,10 +69,22 @@ public class TextHologram extends Hologram<TextHologram> {
     @Setter @Getter @Accessors(chain = true)
     private boolean placeholderApiEnabled = false;
 
+    /**
+     * Whether per-player texts, from {@link #setTextProvider} and PlaceholderAPI, are worked out again every update
+     * period. Only viewers whose text changed get a packet.
+     */
     @Setter @Getter @Accessors(chain = true)
     private boolean placeholderRefresh = true;
 
-    private final Map<UUID, String> placeholderTexts = new ConcurrentHashMap<>();
+    /**
+     * Gives every viewer their own MiniMessage text instead of {@link #getRawText()}. PlaceholderAPI placeholders in
+     * it are filled in too when {@link #isPlaceholderApiEnabled()}. Called for each viewer every update period and
+     * when packets go out, also off the main thread, so keep it fast and thread safe.
+     */
+    @Setter @Getter @Accessors(chain = true)
+    private volatile @Nullable Function<Player, String> textProvider;
+
+    private final Map<UUID, String> sentTexts = new ConcurrentHashMap<>();
 
     /**
      * Creates a new text hologram with the specified ID and render mode.
@@ -134,6 +150,8 @@ public class TextHologram extends Hologram<TextHologram> {
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
         copy.setViewCondition(this.viewCondition);
         copy.placeholderApiEnabled = this.placeholderApiEnabled;
+        copy.placeholderRefresh = this.placeholderRefresh;
+        copy.textProvider = this.textProvider;
         return copy;
     }
 
@@ -247,30 +265,44 @@ public class TextHologram extends Hologram<TextHologram> {
     }
 
     /**
-     * Gets the text with placeholders replaced for a specific player.
-     * Only works if PlaceholderAPI is enabled and available.
+     * The text {@code player} sees, with their {@link #setTextProvider text provider} and placeholders applied.
      */
     public Component getTextForPlayer(Player player) {
-        if (!placeholderApiEnabled || rawText == null || rawText.isEmpty()) {
-            return this.text;
-        }
+        if (!hasPerPlayerText()) return this.text;
+        return MiniMessage.get(replaceFontImages(getRawTextFor(player)));
+    }
 
-        try {
-            Class<?> placeholderAPIClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
-            java.lang.reflect.Method setPlaceholdersMethod = placeholderAPIClass.getMethod("setPlaceholders", org.bukkit.entity.Player.class, String.class);
+    /**
+     * Like {@link #getTextForPlayer} but the MiniMessage text before it is parsed.
+     */
+    public String getRawTextFor(Player player) {
+        Function<Player, String> provider = this.textProvider;
+        String forPlayer = provider == null ? rawText : provider.apply(player);
+        if (forPlayer == null) return "";
+        if (placeholderApiEnabled && PlaceholderAPIHook.isEnabled()) return PlaceholderAPIHook.setPlaceholders(player, forPlayer);
+        return forPlayer;
+    }
 
-            String parsedText = (String) setPlaceholdersMethod.invoke(null, player, rawText);
-            return MiniMessage.get(replaceFontImages(parsedText));
-        } catch (Exception e) {
-            return this.text;
-        }
+    /**
+     * Whether viewers can see different texts, because of a text provider or PlaceholderAPI.
+     */
+    public boolean hasPerPlayerText() {
+        return textProvider != null || (placeholderApiEnabled && PlaceholderAPIHook.isEnabled());
+    }
+
+    /**
+     * Works out every viewer's text again right away instead of at the next update period, for when something the
+     * {@link #setTextProvider text provider} reads has changed. Only viewers whose text changed get a packet.
+     */
+    public TextHologram refreshTexts() {
+        if (!dead && hasPerPlayerText()) PerPlayerTextListener.refresh(this, sentTexts);
+        return this;
     }
 
     @Override
     protected void onUpdateTick() {
         super.onUpdateTick();
-        if (dead || !placeholderApiEnabled || !placeholderRefresh || !PlaceholderAPIHook.isEnabled()) return;
-        PlaceholderAPIHook.refresh(this, placeholderTexts);
+        if (placeholderRefresh) refreshTexts();
     }
 
     public String replaceFontImages(String string) {
