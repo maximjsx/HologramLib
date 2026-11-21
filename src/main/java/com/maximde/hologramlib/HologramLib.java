@@ -13,6 +13,8 @@ import com.maximde.hologramlib.hook.PlaceholderAPIHook;
 import com.maximde.hologramlib.listener.InteractionPacketListener;
 import com.maximde.hologramlib.listener.PlayerJoinListener;
 import com.maximde.hologramlib.listener.PlayerQuitListener;
+import com.maximde.hologramlib.persistence.HologramStore;
+import com.maximde.hologramlib.persistence.PersistentHolograms;
 import com.maximde.hologramlib.utils.BukkitTasks;
 import com.maximde.hologramlib.utils.ItemsAdderHolder;
 import com.maximde.hologramlib.utils.ReplaceText;
@@ -41,6 +43,8 @@ public abstract class HologramLib {
 
     private static HologramManager hologramManager;
 
+    private static PersistentHolograms persistentHolograms;
+
     private static JavaPlugin plugin;
 
     private static boolean initialized = false;
@@ -56,6 +60,25 @@ public abstract class HologramLib {
                                     "The plugin was not fully initialized yet.");
                     return Optional.empty();
                 });
+    }
+
+    /**
+     * Saves the holograms put into {@link PersistentHolograms} to holograms.yml in your plugins folder and
+     * spawns them again on every start. Call it in onEnable() plugins that depend on the HologramLib plugin don't need to only if you shade this.
+     */
+    public static Optional<PersistentHolograms> enablePersistence() {
+        if (persistentHolograms != null) return Optional.of(persistentHolograms);
+        return getManager().map(manager -> {
+            HologramStore store = new HologramStore(plugin.getDataFolder().toPath().resolve("holograms.yml"), plugin.getLogger());
+            persistentHolograms = new PersistentHolograms(manager, store, plugin.getLogger());
+            plugin.getServer().getPluginManager().registerEvents(persistentHolograms, plugin);
+            persistentHolograms.load();
+            return persistentHolograms;
+        });
+    }
+
+    public static Optional<PersistentHolograms> getPersistentHolograms() {
+        return Optional.ofNullable(persistentHolograms);
     }
 
     public static void onLoad(JavaPlugin javaPlugin) {
@@ -147,6 +170,7 @@ public abstract class HologramLib {
     }
 
     public static void onDisable() {
+        if (persistentHolograms != null) persistentHolograms.shutdown();
         if (hologramManager == null) return;
         try {
             hologramManager.removeAll();
