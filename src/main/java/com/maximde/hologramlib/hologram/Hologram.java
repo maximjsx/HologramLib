@@ -199,7 +199,7 @@ public abstract class Hologram<T extends Hologram<T>> {
      */
     public T update() {
         this.updateAffectedPlayers();
-        this.applyMeta();
+        sendChanges(this::applyMeta);
         return self();
     }
 
@@ -248,6 +248,7 @@ public abstract class Hologram<T extends Hologram<T>> {
         this.entity.remove();
         this.task.cancel();
         this.dead = true;
+        if (attachedEntityId != null) PassengerManager.detach(attachedEntityId, this.entityID);
         if (this.interactionBox != null) this.interactionBox.kill();
         this.interactive = false;
     }
@@ -395,7 +396,9 @@ public abstract class Hologram<T extends Hologram<T>> {
      * @param entityId The entity id to attach the hologram to
      */
     public void attach(int entityId) {
+        if (attachedEntityId != null) PassengerManager.detach(attachedEntityId, this.entityID);
         attachedEntityId = entityId;
+        PassengerManager.attach(entityId, this.entityID);
 
         if (renderMode == RenderMode.NOT_ATTACHED_PLAYER) {
             Player attachedPlayer = getPlayerByEntityId(entityId);
@@ -420,6 +423,7 @@ public abstract class Hologram<T extends Hologram<T>> {
                 }
             }
 
+            PassengerManager.detach(attachedEntityId, this.entityID);
             WrapperPlayServerSetPassengers detachPacket = new WrapperPlayServerSetPassengers(attachedEntityId, removeElement(PassengerManager.getPassengers(attachedEntityId), this.entityID));
             BukkitTasks.runTaskAsync(() -> this.entity.sendPacketsToViewers(detachPacket));
             attachedEntityId = null;

@@ -245,18 +245,14 @@ public class HologramManager {
     }
 
     public <H extends Hologram<H>> H spawn(H hologram, Location location) {
-        this.register(hologram);
-        BukkitTasks.runTask(() -> {
-            hologram.getInternalAccess().spawn(location, true).update();
-            spawn(hologram.getInteractionBox(), location);
-        });
-
-        return hologram;
+        return spawn(hologram, location, true);
     }
 
     public <H extends Hologram<H>> H spawn(H hologram, Location location,  boolean ignorePitchYaw) {
         this.register(hologram);
         BukkitTasks.runTask(() -> {
+            // Removed again before this tick, spawning now would leave an entity nothing can remove.
+            if (hologramsMap.get(hologram.getId()) != hologram) return;
             try {
                 hologram.getInternalAccess().spawn(location, ignorePitchYaw).update();
                 spawn(hologram.getInteractionBox(), location, ignorePitchYaw);
