@@ -31,7 +31,8 @@ public class BedrockPlayerHeadFilter implements PacketListener {
     private static final Pattern HEAD_TAG_PATTERN = Pattern.compile("<head:[^>]+>");
 
     public BedrockPlayerHeadFilter(PacketEventsAPI<?> packetEventsAPI) {
-        packetEventsAPI.getEventManager().registerListener(this, PacketListenerPriority.LOW);
+        // after the per player text listener or the heads come back
+        packetEventsAPI.getEventManager().registerListener(this, PacketListenerPriority.HIGH);
     }
 
     @Override

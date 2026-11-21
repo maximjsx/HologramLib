@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import me.tofaa.entitylib.meta.EntityMeta;
+import me.tofaa.entitylib.meta.display.AbstractDisplayMeta;
 import me.tofaa.entitylib.wrapper.WrapperEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -201,6 +202,50 @@ public abstract class Hologram<T extends Hologram<T>> {
         this.updateAffectedPlayers();
         sendChanges(this::applyMeta);
         return self();
+    }
+
+    /**
+     * Sends viewers a new transformation that the client blends into over {@code interpolationTicks}, without
+     * touching the hologram's own translation, rotation and scale.
+     */
+    void sendTransformation(Vector3f translation, Quaternionf leftRotation, Vector3f scale, int interpolationTicks) {
+        AbstractDisplayMeta meta = (AbstractDisplayMeta) this.entity.getEntityMeta();
+        sendChanges(() -> {
+            // the delay is what starts a new interpolation
+            meta.setInterpolationDelay(0);
+            meta.setTransformationInterpolationDuration(interpolationTicks);
+            meta.setTranslation(toVector3f(translation));
+            meta.setLeftRotation(new Quaternion4f(leftRotation.x, leftRotation.y, leftRotation.z, leftRotation.w));
+            meta.setScale(toVector3f(scale));
+        });
+    }
+
+    /**
+     * Like {@link #sendTransformation} with the second rotation too, for effects that move a hologram every tick.
+     */
+    @ApiStatus.Experimental
+    public void showTransformation(Transformation transformation, int interpolationTicks) {
+        Quaternionf left = transformation.getLeftRotation();
+        Quaternionf right = transformation.getRightRotation();
+        AbstractDisplayMeta meta = (AbstractDisplayMeta) this.entity.getEntityMeta();
+        sendChanges(() -> {
+            meta.setInterpolationDelay(0);
+            meta.setTransformationInterpolationDuration(interpolationTicks);
+            meta.setTranslation(toVector3f(transformation.getTranslation()));
+            meta.setLeftRotation(new Quaternion4f(left.x, left.y, left.z, left.w));
+            meta.setScale(toVector3f(transformation.getScale()));
+            meta.setRightRotation(new Quaternion4f(right.x, right.y, right.z, right.w));
+        });
+    }
+
+    /**
+     * The hologram's own transformation, without any motion or effect that is playing on it.
+     */
+    public Transformation getTransformation() {
+        return new Transformation(new Vector3f(translation),
+                new Quaternionf(leftRotation.getX(), leftRotation.getY(), leftRotation.getZ(), leftRotation.getW()),
+                new Vector3f(scale),
+                new Quaternionf(rightRotation.getX(), rightRotation.getY(), rightRotation.getZ(), rightRotation.getW()));
     }
 
     protected void sendChanges(Runnable setters) {
@@ -628,6 +673,10 @@ public abstract class Hologram<T extends Hologram<T>> {
 
     public T setViewPermission(@Nullable String permission) {
         return setViewCondition(permission == null ? player -> true : player -> player.hasPermission(permission));
+    }
+
+    public boolean hasViewer(UUID uuid) {
+        return this.entity.hasViewer(uuid);
     }
 
     public T disableInteraction() {

@@ -3,7 +3,9 @@ package com.maximde.hologramlib;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.maximde.hologramlib.command.HologramCommand;
+import com.maximde.hologramlib.command.HologramDemo;
 import com.maximde.hologramlib.command.Messages;
+import com.maximde.hologramlib.hologram.HologramManager;
 import com.maximde.hologramlib.persistence.PersistentHolograms;
 import com.maximde.hologramlib.persistence.importer.DecentHologramsImporter;
 import com.maximde.hologramlib.persistence.importer.FancyHologramsImporter;
@@ -28,7 +30,8 @@ public class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         HologramLib.init();
-        HologramLib.enablePersistence().ifPresent(this::enableCommand);
+        HologramLib.getManager().ifPresent(manager -> HologramLib.enablePersistence()
+                .ifPresent(persistentHolograms -> enableCommand(manager, persistentHolograms)));
     }
 
     @Override
@@ -37,7 +40,7 @@ public class Main extends JavaPlugin {
         Optional.of(PacketEvents.getAPI()).ifPresent(PacketEventsAPI::terminate);
     }
 
-    private void enableCommand(PersistentHolograms persistentHolograms) {
+    private void enableCommand(HologramManager manager, PersistentHolograms persistentHolograms) {
         Path plugins = getDataFolder().toPath().getParent();
         List<HologramImporter> importers = List.of(
                 new DecentHologramsImporter(plugins, getLogger()),
@@ -49,7 +52,8 @@ public class Main extends JavaPlugin {
                     return Messages.defaults(this);
                 })
                 .thenAccept(messages -> BukkitTasks.runTask(() ->
-                        registerCommand(new HologramCommand(persistentHolograms, messages, importers))));
+                        registerCommand(new HologramCommand(persistentHolograms, messages, importers,
+                                new HologramDemo(manager, this)))));
     }
 
     private void registerCommand(HologramCommand command) {

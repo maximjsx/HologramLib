@@ -2,6 +2,7 @@ package com.maximde.hologramlib.hologram.custom;
 
 import com.maximde.hologramlib.hologram.HologramManager;
 import com.maximde.hologramlib.hologram.InteractionBox;
+import com.maximde.hologramlib.hologram.ItemHologram;
 import com.maximde.hologramlib.hologram.TextHologram;
 import com.maximde.hologramlib.utils.Vector3F;
 import lombok.Getter;
@@ -14,17 +15,25 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Getter
 @ApiStatus.Experimental
 public class PagedLeaderboard implements HologramManager.Events {
 
-    private final List<LeaderboardHologram> pages = new ArrayList<>();
-    private final Map<UUID, Integer> playerCurrentPage = new HashMap<>();
+    // read on netty threads by the text provider
+    private final List<LeaderboardHologram> pages = new CopyOnWriteArrayList<>();
+    private final Map<UUID, Integer> playerCurrentPage = new ConcurrentHashMap<>();
+
+    /**
+     * The text display of the first page, which shows every player the text of their own page. Switching pages only
+     * changes its text for that player, instead of despawning one page and spawning another, which flickered.
+     */
+    private TextHologram display;
     @Getter
     private final String baseId;
 
@@ -202,17 +211,33 @@ public class PagedLeaderboard implements HologramManager.Events {
      * Shows the initial page (page 0) to all online players
      */
     private void showInitialPage() {
-        if (!pages.isEmpty()) {
-            for (LeaderboardHologram page : pages) {
-                for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
-                    page.hide(player);
-                }
-            }
+        for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+            playerCurrentPage.put(player.getUniqueId(), 0);
+        }
+        display.refreshTexts();
+    }
 
-            for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
-                playerCurrentPage.put(player.getUniqueId(), 0);
-                pages.get(0).show(player);
-            }
+    private String textOfPageOf(Player viewer) {
+        int index = getCurrentPage(viewer);
+        List<LeaderboardHologram> current = pages;
+        return index < current.size() ? current.get(index).getTextHologram().getRawText() : display.getRawText();
+    }
+
+    // only the display shows text, the other pages just keep theirs current
+    private void hideFromEveryone(LeaderboardHologram page) {
+        if (page.getTextHologram() != display) page.getTextHologram().setViewCondition(player -> false);
+        ItemHologram head = page.getFirstPlaceHead();
+        if (head != null) head.setViewCondition(player -> pages.indexOf(page) == getCurrentPage(player));
+    }
+
+    private void showHeadOf(int index, Player player, boolean visible) {
+        if (index >= pages.size()) return;
+        ItemHologram head = pages.get(index).getFirstPlaceHead();
+        if (head == null || head.isDead()) return;
+        if (visible) {
+            head.addViewer(player);
+        } else {
+            head.removeViewer(player);
         }
     }
 
@@ -299,12 +324,10 @@ public class PagedLeaderboard implements HologramManager.Events {
 
         if (currentPage == pageIndex) return;
 
-        if (currentPage < pages.size()) {
-            pages.get(currentPage).hide(player);
-        }
-
-        pages.get(pageIndex).show(player);
         playerCurrentPage.put(playerId, pageIndex);
+        display.refreshTexts();
+        showHeadOf(currentPage, player, false);
+        showHeadOf(pageIndex, player, true);
     }
 
     /**
@@ -318,14 +341,13 @@ public class PagedLeaderboard implements HologramManager.Events {
      * Adds a new leaderboard page
      */
     public PagedLeaderboard addPage(LeaderboardHologram page) {
-        pages.add(page);
-        if (spawned) {
-            page.teleport(baseLocation);
-
-            for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
-                page.hide(player);
-            }
+        if (display == null) {
+            display = page.getTextHologram();
+            display.setTextProvider(this::textOfPageOf);
         }
+        pages.add(page);
+        hideFromEveryone(page);
+        if (spawned) page.teleport(baseLocation);
         return this;
     }
 
@@ -336,25 +358,19 @@ public class PagedLeaderboard implements HologramManager.Events {
         if (index < 0 || index >= pages.size()) return false;
 
         LeaderboardHologram removedPage = pages.remove(index);
-
-        for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
-            removedPage.hide(player);
+        if (removedPage.getFirstPlaceHead() != null) {
+            removedPage.getFirstPlaceHead().setViewCondition(player -> false);
         }
 
-        playerCurrentPage.entrySet().removeIf(entry -> {
-            int playerPage = entry.getValue();
-            if (playerPage == index) {
-                Player player = org.bukkit.Bukkit.getPlayer(entry.getKey());
-                if (player != null && !pages.isEmpty()) {
-                    switchToPage(player, 0);
-                }
-                return true;
-            } else if (playerPage > index) {
-                entry.setValue(playerPage - 1);
-            }
-            return false;
+        playerCurrentPage.replaceAll((uuid, playerPage) -> {
+            if (playerPage == index) return 0;
+            return playerPage > index ? playerPage - 1 : playerPage;
         });
-
+        for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+            if (removedPage.getFirstPlaceHead() != null) removedPage.getFirstPlaceHead().removeViewer(player);
+            showHeadOf(getCurrentPage(player), player, true);
+        }
+        if (display != null) display.refreshTexts();
         return true;
     }
 
@@ -365,6 +381,7 @@ public class PagedLeaderboard implements HologramManager.Events {
         for (LeaderboardHologram page : pages) {
             page.update();
         }
+        if (display != null) display.refreshTexts();
     }
 
     /**
@@ -372,10 +389,6 @@ public class PagedLeaderboard implements HologramManager.Events {
      */
     public void show(Player player) {
         if (!spawned) return;
-
-        for (LeaderboardHologram page : pages) {
-            page.hide(player);
-        }
 
         if (showArrows) {
             if (!singleDirectionCycling) {
@@ -386,12 +399,11 @@ public class PagedLeaderboard implements HologramManager.Events {
             rightInteraction.show(player);
         }
 
-        int currentPage = playerCurrentPage.getOrDefault(player.getUniqueId(), 0);
-        if (currentPage < pages.size()) {
-            pages.get(currentPage).show(player);
-        } else if (!pages.isEmpty()) {
-            switchToPage(player, 0);
-        }
+        playerCurrentPage.putIfAbsent(player.getUniqueId(), 0);
+        if (getCurrentPage(player) >= pages.size()) playerCurrentPage.put(player.getUniqueId(), 0);
+        display.show(player);
+        display.refreshTexts();
+        showHeadOf(getCurrentPage(player), player, true);
     }
 
     /**
@@ -409,8 +421,9 @@ public class PagedLeaderboard implements HologramManager.Events {
             rightArrow.hide(player);
         }
 
-        for (LeaderboardHologram page : pages) {
-            page.hide(player);
+        display.hide(player);
+        for (int index = 0; index < pages.size(); index++) {
+            showHeadOf(index, player, false);
         }
     }
 

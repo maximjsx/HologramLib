@@ -11,8 +11,10 @@ import com.maximde.hologramlib.hook.BedrockPlayerHeadFilter;
 import com.maximde.hologramlib.hook.HeadDatabaseHook;
 import com.maximde.hologramlib.hook.PlaceholderAPIHook;
 import com.maximde.hologramlib.listener.InteractionPacketListener;
+import com.maximde.hologramlib.listener.PerPlayerTextListener;
 import com.maximde.hologramlib.listener.PlayerJoinListener;
 import com.maximde.hologramlib.listener.PlayerQuitListener;
+import com.maximde.hologramlib.listener.PlayerSyncListener;
 import com.maximde.hologramlib.persistence.HologramStore;
 import com.maximde.hologramlib.persistence.PersistentHolograms;
 import com.maximde.hologramlib.utils.BukkitTasks;
@@ -136,9 +138,12 @@ public abstract class HologramLib {
             hologramManager = new HologramManager();
             PacketEvents.getAPI().getEventManager().registerListener(new InteractionPacketListener(hologramManager),
                     PacketListenerPriority.LOW);
+            PacketEvents.getAPI().getEventManager().registerListener(new PerPlayerTextListener(hologramManager),
+                    PacketListenerPriority.NORMAL);
 
             plugin.getServer().getPluginManager().registerEvents(new PlayerJoinListener(hologramManager), plugin);
             plugin.getServer().getPluginManager().registerEvents(new PlayerQuitListener(hologramManager), plugin);
+            plugin.getServer().getPluginManager().registerEvents(new PlayerSyncListener(hologramManager), plugin);
 
 
             PluginManager pluginManager = Bukkit.getPluginManager();

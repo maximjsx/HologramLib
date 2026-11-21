@@ -50,6 +50,7 @@ public final class HologramCommand implements TabExecutor {
     private final PersistentHolograms holograms;
     private final Messages messages;
     private final List<HologramImporter> importers;
+    private final HologramDemo demo;
     private final Map<String, Subcommand> subcommands = buildSubcommands();
 
     private Map<String, Subcommand> buildSubcommands() {
@@ -77,6 +78,7 @@ public final class HologramCommand implements TabExecutor {
                 edit(sender, args[1], data -> data.withViewPermission(isNone(args[2]) ? null : args[2]))));
         subcommands.put("action", new Subcommand("action <id> <add <TYPE:data>|clear>", 2, false, this::action));
         subcommands.put("import", new Subcommand("import <plugin>", 1, false, this::importHolograms));
+        subcommands.put("demo", new Subcommand("demo [clear]", 0, false, this::demo));
         return subcommands;
     }
 
@@ -201,6 +203,16 @@ public final class HologramCommand implements TabExecutor {
                 });
     }
 
+    private void demo(CommandSender sender, String[] args) {
+        if (args.length > 1 && args[1].equalsIgnoreCase("clear")) {
+            demo.clear();
+            messages.send(sender, "demo-cleared");
+            return;
+        }
+        if (!(sender instanceof Player player)) throw new CommandFailure("players-only");
+        messages.send(sender, "demo-started", unparsed("count", String.valueOf(demo.start(player))));
+    }
+
     private void saveImported(CommandSender sender, HologramImporter importer, HologramImporter.Result result) {
         List<HologramData> fresh = result.holograms().stream().filter(data -> !holograms.exists(data.id())).toList();
         int imported = holograms.putAll(fresh);
@@ -243,6 +255,7 @@ public final class HologramCommand implements TabExecutor {
         if (args.length == 2) {
             return switch (subcommand) {
                 case "import" -> importers.stream().map(HologramImporter::key).toList();
+                case "demo" -> List.of("clear");
                 case "help", "list", "near", "create" -> List.of();
                 default -> holograms.all().stream().map(HologramData::id).toList();
             };
