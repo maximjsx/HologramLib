@@ -1,0 +1,46 @@
+prefix: '<gradient:#ff6000:#ffc663>HologramLib</gradient> <dark_gray>»</dark_gray> '
+players-only: '<red>Only players can do that.'
+usage: '<gray>Usage: <white>/<label> <usage>'
+
+unknown-hologram: '<red>There is no saved hologram called <white><id></white>.'
+id-taken: '<red>The id <white><id></white> is already used.'
+invalid-id: '<red>Ids may only contain letters, digits, <white>_</white> and <white>-</white>.'
+unknown-content: '<red><white><content></white> is no known item or block.'
+missing-text: '<red>Write the text, <white>\n</white> starts a new line.'
+missing-item: '<red>Hold an item or name one, like <white>diamond_sword</white>.'
+missing-block: '<red>Name the block, like <white>oak_stairs[facing=east]</white>.'
+not-positive: '<red><white><value></white> is not a positive number.'
+not-boolean: '<red>Use true or false, not <white><value></white>.'
+unknown-option: '<red><white><value></white> is none of <white><options></white>.'
+invalid-color: '<red>Colors are #RRGGBB or #AARRGGBB, not <white><value></white>.'
+invalid-action: '<red>Write the action as TYPE:data, the types are MESSAGE, COMMAND, CONSOLE and SOUND.'
+world-not-loaded: '<red>The world <white><world></white> is not loaded.'
+
+created: '<green>Created <white><id></white>.'
+deleted: '<green>Deleted <white><id></white>.'
+updated: '<green>Updated <white><id></white>.'
+moved: '<green>Moved <white><id></white> to you.'
+teleported: '<green>Teleported you to <white><id></white>.'
+copied: '<green>Copied <white><id></white> to <white><copy></white>.'
+
+list-header: '<gold><count> saved holograms:'
+list-entry: '<gray>- <white><id></white> <dark_gray>(<type>, <world> <x> <y> <z>)'
+near-header: '<gold><count> saved holograms within <radius> blocks:'
+info: |-
+  <gold><id></gold> <gray>(<type>)
+  <gray>Location: <white><world> <x> <y> <z></white>
+  <gray>Content: <white><content></white>
+  <gray>Scale: <white><scale></white>, billboard: <white><billboard></white>
+  <gray>Permission: <white><permission></white>, placeholders: <white><placeholders></white>
+  <gray>Actions: <white><actions></white>
+help: |-
+  <gold>HologramLib commands
+  <white>/<label> create \<id> text \<text></white> <gray>new text hologram, <white>\n</white> starts a new line
+  <white>/<label> create \<id> item [item]</white> <gray>new item hologram, the held item by default
+  <white>/<label> create \<id> block \<block></white> <gray>new block hologram
+  <white>/<label> text \<id> \<text></white> <gray>changes the text, item or block
+  <white>/<label> delete|info|movehere|tp \<id></white>
+  <white>/<label> copy \<id> \<new id></white> <gray>copies it to where you stand
+  <white>/<label> list</white> <gray>or <white>near [radius]</white>
+  <white>/<label> scale|billboard|background|shadow|placeholders|permission \<id> \<value></white>
+  <white>/<label> action \<id> add \<TYPE:data>|clear</white> <gray>MESSAGE, COMMAND, CONSOLE, SOUND

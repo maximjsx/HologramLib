@@ -94,6 +94,7 @@ public class BlockHologram extends Hologram<BlockHologram> {
         copy.viewRange = this.viewRange;
         copy.setUpdateTaskPeriod(this.updateTaskPeriod);
         copy.maxPlayerRenderDistanceSquared = this.maxPlayerRenderDistanceSquared;
+        copy.setViewCondition(this.viewCondition);
         return copy;
     }
 }
