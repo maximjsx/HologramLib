@@ -1,6 +1,7 @@
 package com.maximde.hologramlib.command;
 
 import com.maximde.hologramlib.persistence.ClickAction;
+import com.maximde.hologramlib.persistence.DecentHologramsImporter;
 import com.maximde.hologramlib.persistence.HologramData;
 import com.maximde.hologramlib.persistence.PersistentHolograms;
 import com.maximde.hologramlib.utils.BukkitTasks;
@@ -48,6 +49,7 @@ public final class HologramCommand implements TabExecutor {
 
     private final PersistentHolograms holograms;
     private final Messages messages;
+    private final DecentHologramsImporter importer;
     private final Map<String, Subcommand> subcommands = buildSubcommands();
 
     private Map<String, Subcommand> buildSubcommands() {
@@ -74,6 +76,7 @@ public final class HologramCommand implements TabExecutor {
         subcommands.put("permission", new Subcommand("permission <id> <permission|none>", 2, false, (sender, args) ->
                 edit(sender, args[1], data -> data.withViewPermission(isNone(args[2]) ? null : args[2]))));
         subcommands.put("action", new Subcommand("action <id> <add <TYPE:data>|clear>", 2, false, this::action));
+        subcommands.put("import", new Subcommand("import decentholograms", 1, false, this::importHolograms));
         return subcommands;
     }
 
@@ -181,6 +184,29 @@ public final class HologramCommand implements TabExecutor {
         }
     }
 
+    private void importHolograms(CommandSender sender, String[] args) {
+        if (!args[1].equalsIgnoreCase("decentholograms")) {
+            throw new CommandFailure("unknown-option", unparsed("value", args[1]), unparsed("options", "decentholograms"));
+        }
+        messages.send(sender, "import-started", unparsed("source", "DecentHolograms"));
+        importer.read()
+                .thenAccept(result -> BukkitTasks.runTask(() -> result.ifPresentOrElse(
+                        found -> saveImported(sender, found),
+                        () -> messages.send(sender, "import-no-folder", unparsed("folder", importer.getFolder().toString())))))
+                .exceptionally(error -> {
+                    BukkitTasks.runTask(() -> messages.send(sender, "import-failed"));
+                    return null;
+                });
+    }
+
+    private void saveImported(CommandSender sender, DecentHologramsImporter.Result result) {
+        List<HologramData> fresh = result.holograms().stream().filter(data -> !holograms.exists(data.id())).toList();
+        int imported = holograms.putAll(fresh);
+        int skipped = result.skipped() + result.holograms().size() - imported;
+        messages.send(sender, "imported", unparsed("count", String.valueOf(imported)),
+                unparsed("source", "DecentHolograms"), unparsed("skipped", String.valueOf(skipped)));
+    }
+
     private void edit(CommandSender sender, String id, UnaryOperator<HologramData> change) {
         save(change.apply(require(id)));
         messages.send(sender, "updated", unparsed("id", id));
@@ -214,6 +240,7 @@ public final class HologramCommand implements TabExecutor {
         if (args.length == 1) return Stream.concat(Stream.of("help"), subcommands.keySet().stream()).toList();
         if (args.length == 2) {
             return switch (subcommand) {
+                case "import" -> List.of("decentholograms");
                 case "help", "list", "near", "create" -> List.of();
                 default -> holograms.all().stream().map(HologramData::id).toList();
             };
