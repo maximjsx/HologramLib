@@ -16,6 +16,7 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public final class PersistentHolograms implements Listener {
     }
 
     public Collection<HologramData> all() {
-        return saved.values();
+        return Collections.unmodifiableCollection(saved.values());
     }
 
     public Optional<HologramData> get(String id) {
@@ -55,7 +56,16 @@ public final class PersistentHolograms implements Listener {
         return saved.containsKey(id);
     }
 
-    // synchronized since on folia players in different regions can run commands at the same time
+    /**
+     * Empty while its world isn't loaded.
+     */
+    public Optional<Hologram<?>> getSpawned(String id) {
+        return Optional.ofNullable(spawned.get(id));
+    }
+
+    /**
+     * Saves the hologram and respawns it. Returns false if the item or block doesn't exist nothing is saved then.
+     */
     public synchronized boolean put(HologramData data) {
         if (!HologramContent.isValid(data)) return false;
         despawn(data.id());
@@ -132,6 +142,7 @@ public final class PersistentHolograms implements Listener {
                 .setBillboard(data.billboard())
                 .setViewPermission(data.viewPermission());
         if (!data.actions().isEmpty()) hologram.onInteract(player -> data.actions().forEach(action -> action.run(player)));
+        Bukkit.getPluginManager().callEvent(new PersistentHologramSpawnEvent(data, hologram));
         return manager.spawn(hologram, location, false);
     }
 
